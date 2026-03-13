@@ -269,37 +269,96 @@ export default function Step7Envelope({ event, state }: Props) {
 
       {/* ===== TICKET FULLY OUT ===== */}
       {(phase === "ticket-out" || phase === "pull-postcard") && !postcardFullyOut && (
-        <div className="w-full max-w-lg">
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          >
-            <CinemaTicket
-              firstName={state.displayName}
-              ticketNumber={state.ticketNumber}
-              eventTitle={event.title}
-              guestName={event.guest_name}
-              formattedDate={formattedDate}
-              question={state.guestQuestion}
-            />
+        <div className="w-full max-w-5xl">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-center gap-8 md:gap-10">
+            {/* Ticket side */}
+            <motion.div
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="w-full md:w-1/2 md:max-w-md"
+            >
+              <CinemaTicket
+                firstName={state.displayName}
+                ticketNumber={state.ticketNumber}
+                eventTitle={event.title}
+                guestName={event.guest_name}
+                formattedDate={formattedDate}
+                question={state.guestQuestion}
+              />
 
-            {state.crewName && (
-              <div className="flex justify-center mt-4">
-                <span className="text-doac-gray/50 text-xs border border-white/10 px-3 py-1">
-                  {state.crewEmoji} {state.crewName} crew
-                </span>
-              </div>
+              {state.crewName && (
+                <div className="flex justify-center mt-4">
+                  <span className="text-doac-gray/50 text-xs border border-white/10 px-3 py-1">
+                    Watching with {state.crewEmoji} {state.crewName} crew
+                  </span>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Postcard side — envelope with draggable postcard */}
+            {phase === "pull-postcard" && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="w-full md:w-1/2 md:max-w-sm relative"
+              >
+                <p className="text-doac-gray/40 text-xs text-center mb-4">
+                  There&apos;s something else in your envelope...
+                </p>
+
+                <div className="relative mx-auto w-72 h-44 md:w-80 md:h-48">
+                  <div className="absolute inset-0 border border-white/15 bg-[#0a0a0a] rounded-sm" />
+                  <div
+                    className="absolute -top-[1px] left-0 right-0 h-1/2 border-t border-white/5"
+                    style={{
+                      clipPath: "polygon(0 100%, 100% 100%, 50% 0)",
+                      background: "linear-gradient(0deg, rgba(255,255,255,0.015) 0%, transparent 100%)",
+                    }}
+                  />
+
+                  <motion.div
+                    drag="y"
+                    dragConstraints={{ top: -300, bottom: 0 }}
+                    dragElastic={0.1}
+                    onDragEnd={handlePostcardDragEnd}
+                    style={{ y: postcardY, opacity: postcardOpacity }}
+                    className="absolute top-4 left-3 right-3 z-10 cursor-grab active:cursor-grabbing"
+                  >
+                    <div className="bg-[#0d0d0d] border border-white/15 rounded-sm overflow-hidden shadow-[0_-4px_30px_rgba(0,0,0,0.8)]">
+                      <div className="aspect-[4/3] bg-white/[0.03] flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-2">
+                            <div className="w-0 h-0 border-l-[10px] border-l-white/60 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent ml-1" />
+                          </div>
+                          <p className="text-white/30 text-xs">Video from Steven</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <motion.div
+                      animate={{ y: [-2, -8, -2] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="flex flex-col items-center mt-3"
+                    >
+                      <div className="w-4 h-4 border-l-2 border-t-2 border-white/25 rotate-45 -mb-1" />
+                      <p className="text-doac-gray/40 text-xs mt-2">Pull up</p>
+                    </motion.div>
+                  </motion.div>
+                </div>
+              </motion.div>
             )}
-          </motion.div>
+          </div>
 
           {/* Action buttons */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
+            className="mt-8"
           >
-            <div className="flex flex-wrap justify-center gap-4 mt-8">
+            <div className="flex flex-wrap justify-center gap-4">
               <button onClick={() => handleShare("copy")} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Share your ticket</button>
               <button onClick={() => { const url = `${window.location.origin}/register?ref=${state.referralCode}`; navigator.clipboard.writeText(url); trackEvent("referral_link_generated", { referral_code: state.referralCode }); alert("Referral link copied!"); }} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Invite a friend</button>
               <button onClick={handleSaveCalendar} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Save the date</button>
@@ -309,129 +368,75 @@ export default function Step7Envelope({ event, state }: Props) {
               <button onClick={() => handleShare("whatsapp")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">WhatsApp</button>
             </div>
           </motion.div>
-
-          {/* Envelope with postcard still inside */}
-          {phase === "pull-postcard" && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="mt-12 relative"
-            >
-              <p className="text-doac-gray/40 text-xs text-center mb-4">
-                There&apos;s something else in your envelope...
-              </p>
-
-              {/* Mini envelope with draggable postcard */}
-              <div className="relative mx-auto w-72 h-44 md:w-80 md:h-48">
-                {/* Envelope back */}
-                <div className="absolute inset-0 border border-white/15 bg-[#0a0a0a] rounded-sm" />
-                {/* Open flap */}
-                <div
-                  className="absolute -top-[1px] left-0 right-0 h-1/2 border-t border-white/5"
-                  style={{
-                    clipPath: "polygon(0 100%, 100% 100%, 50% 0)",
-                    background: "linear-gradient(0deg, rgba(255,255,255,0.015) 0%, transparent 100%)",
-                  }}
-                />
-
-                {/* Draggable postcard */}
-                <motion.div
-                  drag="y"
-                  dragConstraints={{ top: -300, bottom: 0 }}
-                  dragElastic={0.1}
-                  onDragEnd={handlePostcardDragEnd}
-                  style={{ y: postcardY, opacity: postcardOpacity }}
-                  className="absolute top-4 left-3 right-3 z-10 cursor-grab active:cursor-grabbing"
-                >
-                  <div className="bg-[#0d0d0d] border border-white/15 rounded-sm overflow-hidden shadow-[0_-4px_30px_rgba(0,0,0,0.8)]">
-                    <div className="aspect-[4/3] bg-white/[0.03] flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-2">
-                          <div className="w-0 h-0 border-l-[10px] border-l-white/60 border-t-[7px] border-t-transparent border-b-[7px] border-b-transparent ml-1" />
-                        </div>
-                        <p className="text-white/30 text-xs">Video from Steven</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <motion.div
-                    animate={{ y: [-2, -8, -2] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                    className="flex flex-col items-center mt-3"
-                  >
-                    <div className="w-4 h-4 border-l-2 border-t-2 border-white/25 rotate-45 -mb-1" />
-                    <p className="text-doac-gray/40 text-xs mt-2">Pull up</p>
-                  </motion.div>
-                </motion.div>
-              </div>
-            </motion.div>
-          )}
         </div>
       )}
 
       {/* ===== POSTCARD FULLY OUT (video auto-plays) ===== */}
       {postcardFullyOut && (
-        <div className="w-full max-w-lg">
-          {/* Ticket (compact) */}
-          <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-          >
-            <CinemaTicket
-              firstName={state.displayName}
-              ticketNumber={state.ticketNumber}
-              eventTitle={event.title}
-              guestName={event.guest_name}
-              formattedDate={formattedDate}
-              question={state.guestQuestion}
-            />
-
-            {state.crewName && (
-              <div className="flex justify-center mt-4">
-                <span className="text-doac-gray/50 text-xs border border-white/10 px-3 py-1">
-                  {state.crewEmoji} {state.crewName} crew
-                </span>
-              </div>
-            )}
-          </motion.div>
-
-          {/* Steven's Video Postcard */}
-          <motion.div
-            initial={{ opacity: 0, y: -30, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-            className="mt-10"
-          >
-            <div className="w-full max-w-xs mx-auto aspect-[3/4] relative overflow-hidden rounded-lg border border-white/10">
-              <video
-                ref={videoRef}
-                src={event.postcard_video_url}
-                className="w-full h-full object-cover"
-                playsInline
-                poster={event.thumbnail_url}
-                onClick={() => {
-                  if (videoRef.current) {
-                    if (videoRef.current.paused) {
-                      videoRef.current.play();
-                    } else {
-                      videoRef.current.pause();
-                    }
-                  }
-                }}
-                onEnded={() => {
-                  const duration = (Date.now() - videoStartRef.current) / 1000;
-                  trackEvent("postcard_video_completed", {
-                    watch_duration: duration,
-                    completed: true,
-                  });
-                }}
+        <div className="w-full max-w-5xl">
+          {/* Side-by-side on desktop, stacked on mobile */}
+          <div className="flex flex-col md:flex-row md:items-start md:justify-center gap-8 md:gap-10">
+            {/* Ticket */}
+            <motion.div
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
+              className="w-full md:w-1/2 md:max-w-md"
+            >
+              <CinemaTicket
+                firstName={state.displayName}
+                ticketNumber={state.ticketNumber}
+                eventTitle={event.title}
+                guestName={event.guest_name}
+                formattedDate={formattedDate}
+                question={state.guestQuestion}
               />
-            </div>
-            <p className="text-doac-gray/40 text-xs text-center mt-3">
-              A message from Steven
-            </p>
-          </motion.div>
+
+              {state.crewName && (
+                <div className="flex justify-center mt-4">
+                  <span className="text-doac-gray/50 text-xs border border-white/10 px-3 py-1">
+                    Watching with {state.crewEmoji} {state.crewName} crew
+                  </span>
+                </div>
+              )}
+            </motion.div>
+
+            {/* Steven's Video Postcard */}
+            <motion.div
+              initial={{ opacity: 0, y: -30, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="w-full md:w-1/2 md:max-w-sm"
+            >
+              <div className="w-full aspect-[3/4] relative overflow-hidden rounded-lg border border-white/10">
+                <video
+                  ref={videoRef}
+                  src={event.postcard_video_url}
+                  className="w-full h-full object-cover"
+                  playsInline
+                  poster={event.thumbnail_url}
+                  onClick={() => {
+                    if (videoRef.current) {
+                      if (videoRef.current.paused) {
+                        videoRef.current.play();
+                      } else {
+                        videoRef.current.pause();
+                      }
+                    }
+                  }}
+                  onEnded={() => {
+                    const duration = (Date.now() - videoStartRef.current) / 1000;
+                    trackEvent("postcard_video_completed", {
+                      watch_duration: duration,
+                      completed: true,
+                    });
+                  }}
+                />
+              </div>
+              <p className="text-doac-gray/40 text-xs text-center mt-3">
+                A message from Steven
+              </p>
+            </motion.div>
+          </div>
 
           {/* Action buttons */}
           <motion.div
