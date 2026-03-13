@@ -3,10 +3,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Behind The Diary — Private Screening",
-  description: "Find your people. Watch together. Actually connect.",
+  description: "A private screening experience.",
   openGraph: {
     title: "Behind The Diary — Private Screening",
-    description: "Find your people. Watch together. Actually connect.",
+    description: "A private screening experience.",
     type: "website",
   },
 };
