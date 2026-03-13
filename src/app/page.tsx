@@ -11,7 +11,7 @@ export default function Home() {
           Private Screening
         </h1>
         <p className="text-doac-gray text-lg mb-10 animate-fade-in" style={{ animationDelay: "0.5s" }}>
-          A private screening experience.
+          Join us to watch an unaired episode of Behind The Diary.
         </p>
         <Link
           href="/register"
