@@ -4,7 +4,7 @@ interface Props {
   firstName: string;
   ticketNumber: string;
   eventTitle: string;
-  guestName: string;
+  guestName?: string;
   formattedDate: string;
   question: string;
 }
@@ -13,7 +13,6 @@ export default function CinemaTicket({
   firstName,
   ticketNumber,
   eventTitle,
-  guestName,
   formattedDate,
   question,
 }: Props) {
@@ -30,8 +29,8 @@ export default function CinemaTicket({
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h3 className="font-serif text-3xl tracking-[0.2em] text-white font-bold">
-              DOAC
+            <h3 className="font-serif text-2xl tracking-[0.15em] text-white font-bold">
+              Behind The Diary
             </h3>
             <p className="text-doac-gray text-xs tracking-widest mt-1">
               PRIVATE SCREENING
@@ -49,14 +48,13 @@ export default function CinemaTicket({
         {/* Details */}
         <div className="space-y-4">
           <div>
-            <p className="text-doac-gray text-xs tracking-widest mb-1">GUEST</p>
+            <p className="text-doac-gray text-xs tracking-widest mb-1">NAME</p>
             <p className="font-serif text-xl text-white">{firstName}</p>
           </div>
 
           <div>
             <p className="text-doac-gray text-xs tracking-widest mb-1">SCREENING</p>
             <p className="font-serif text-lg text-white">{eventTitle}</p>
-            <p className="text-doac-gray text-sm mt-1">with {guestName}</p>
           </div>
 
           <div>
