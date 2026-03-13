@@ -290,7 +290,7 @@ export default function Step7Envelope({ event, state }: Props) {
               {state.crewName && (
                 <div className="flex justify-center mt-4">
                   <span className="text-doac-gray/50 text-xs border border-white/10 px-3 py-1">
-                    Watching with {state.crewEmoji} {state.crewName} crew
+                    {state.crewEmoji} The {state.crewName} Room
                   </span>
                 </div>
               )}
@@ -394,7 +394,7 @@ export default function Step7Envelope({ event, state }: Props) {
               {state.crewName && (
                 <div className="flex justify-center mt-4">
                   <span className="text-doac-gray/50 text-xs border border-white/10 px-3 py-1">
-                    Watching with {state.crewEmoji} {state.crewName} crew
+                    {state.crewEmoji} The {state.crewName} Room
                   </span>
                 </div>
               )}

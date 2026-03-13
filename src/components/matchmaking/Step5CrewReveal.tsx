@@ -73,11 +73,11 @@ export default function Step5CrewReveal({
             className="text-center"
           >
             <p className="text-doac-gray text-xs tracking-[0.3em] uppercase mb-6">
-              You&apos;re watching with
+              You&apos;re watching from
             </p>
             <span className="text-6xl block mb-4">{crewEmoji}</span>
             <h2 className="font-serif text-4xl md:text-5xl text-white">
-              {crewName}
+              The {crewName} Room
             </h2>
           </motion.div>
         )}
