@@ -246,7 +246,7 @@ export default function Step7Envelope({ event, state }: Props) {
               transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
               className="w-full md:w-1/2 md:max-w-sm"
             >
-              <div className="w-full aspect-[3/4] relative overflow-hidden rounded-lg border border-white/10">
+              <div className="w-full aspect-video relative overflow-hidden rounded-lg border border-white/10">
                 <video
                   ref={videoRef}
                   src={event.postcard_video_url}
