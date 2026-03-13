@@ -18,6 +18,7 @@ const PULL_THRESHOLD = -160;
 
 export default function Step7Envelope({ event, state }: Props) {
   const [phase, setPhase] = useState<Phase>("sealed");
+  const [videoEnded, setVideoEnded] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoStartRef = useRef(0);
@@ -244,9 +245,9 @@ export default function Step7Envelope({ event, state }: Props) {
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.7, delay: 0.3, ease: "easeOut" }}
-              className="w-full md:w-1/2 md:max-w-md flex flex-col"
+              className="w-full md:w-1/2 md:max-w-md"
             >
-              <div className="w-full flex-1 relative overflow-hidden rounded-lg border border-white/10">
+              <div className="w-full aspect-video relative overflow-hidden rounded-lg border border-white/10">
                 <video
                   ref={videoRef}
                   src={event.postcard_video_url}
@@ -257,12 +258,14 @@ export default function Step7Envelope({ event, state }: Props) {
                     if (videoRef.current) {
                       if (videoRef.current.paused) {
                         videoRef.current.play();
+                        setVideoEnded(false);
                       } else {
                         videoRef.current.pause();
                       }
                     }
                   }}
                   onEnded={() => {
+                    setVideoEnded(true);
                     const duration = (Date.now() - videoStartRef.current) / 1000;
                     trackEvent("postcard_video_completed", {
                       watch_duration: duration,
@@ -270,6 +273,26 @@ export default function Step7Envelope({ event, state }: Props) {
                     });
                   }}
                 />
+
+                {/* Glassmorphic CTA overlay — appears when video ends */}
+                {videoEnded && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="absolute inset-x-0 bottom-0 p-4 flex justify-center"
+                    style={{
+                      background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
+                    }}
+                  >
+                    <button
+                      onClick={() => handleShare("copy")}
+                      className="backdrop-blur-md bg-white/10 border border-white/20 text-white px-6 py-2.5 text-sm tracking-wide rounded-full hover:bg-white/20 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.3)]"
+                    >
+                      Share your ticket
+                    </button>
+                  </motion.div>
+                )}
               </div>
               <p className="text-doac-gray/40 text-xs text-center mt-3">
                 A message from Steven
