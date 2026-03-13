@@ -58,7 +58,7 @@ export default function Step2Motivation({ displayName, onNext }: Props) {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="text-doac-gray text-sm mb-10"
         >
-          Help us seat you with the right people and make this night unforgettable.
+          Help us connect you with the right people and make this night unforgettable.
         </motion.p>
 
         {/* Text input */}
