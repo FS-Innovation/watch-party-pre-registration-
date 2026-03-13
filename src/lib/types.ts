@@ -114,6 +114,8 @@ export interface MatchmakingState {
   crewName: string;
   crewEmoji: string;
   registrationId: string | null;
+  ticketNumber: string;
+  referralCode: string;
   stepEnteredAt: number;
 }
 
@@ -133,6 +135,8 @@ export const INITIAL_MATCHMAKING_STATE: MatchmakingState = {
   crewName: "",
   crewEmoji: "",
   registrationId: null,
+  ticketNumber: "",
+  referralCode: "",
   stepEnteredAt: Date.now(),
 };
 

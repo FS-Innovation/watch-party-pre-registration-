@@ -3,15 +3,26 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { DEMO_EVENT, INITIAL_MATCHMAKING_STATE, MatchmakingState, CREW_SEGMENTS } from "@/lib/types";
 import { initAnalytics, trackEvent, trackPage, getUTMParams } from "@/lib/analytics";
+import { generateTicketNumber, generateReferralCode } from "@/lib/utils";
 import ScreenTransition from "@/components/ScreenTransition";
 import Step1FindYourPeople from "@/components/matchmaking/Step1FindYourPeople";
 import Step2Motivation from "@/components/matchmaking/Step2Motivation";
 import Step3Question from "@/components/matchmaking/Step3Question";
 import Step4FindingCrew from "@/components/matchmaking/Step4FindingCrew";
 import Step5CrewReveal from "@/components/matchmaking/Step5CrewReveal";
-import Step6ScreeningRoom from "@/components/matchmaking/Step6ScreeningRoom";
+import Screen5Commitment from "@/components/Screen5Commitment";
+import Step7Envelope from "@/components/matchmaking/Step7Envelope";
 
 const event = DEMO_EVENT;
+
+// Flow:
+// 1. Find Your People (name, email, city)
+// 2. What brings you here tonight? (open text)
+// 3. Question for Steven (A/B tested)
+// 4. Finding your crew... (loading + AI matching)
+// 5. Crew Reveal (AI reasoning, Take me in / Switch rooms)
+// 6. Commitment Moment ("This screening happens once...")
+// 7. The Envelope (sealed → ticket → share → Steven video postcard)
 
 export default function RegisterPage() {
   const [state, setState] = useState<MatchmakingState>(INITIAL_MATCHMAKING_STATE);
@@ -55,8 +66,7 @@ export default function RegisterPage() {
   // Step 3 → 4: Question submitted, start crew matching
   const handleStep3Complete = useCallback(
     (guestQuestion: string) => {
-      const updatedQuestion = guestQuestion;
-      setState((prev) => ({ ...prev, guestQuestion: updatedQuestion }));
+      setState((prev) => ({ ...prev, guestQuestion }));
 
       // Fire the crew matching API call NOW (runs in parallel with the loading screen)
       crewMatchPromise.current = fetch("/api/crew/match", {
@@ -69,7 +79,7 @@ export default function RegisterPage() {
           city: state.city,
           timezone: state.timezone,
           motivation_text: state.motivationText,
-          guest_question: updatedQuestion,
+          guest_question: guestQuestion,
           ab_variant: state.abVariant,
         }),
       })
@@ -87,6 +97,7 @@ export default function RegisterPage() {
             crew_emoji: "\u{1F91D}",
             ai_segment: "connector",
             ai_reasoning: "",
+            ticket_number: generateTicketNumber(),
           };
           crewMatchResult.current = fallback;
           return fallback;
@@ -99,13 +110,13 @@ export default function RegisterPage() {
 
   // Step 4 → 5: Loading complete, reveal crew
   const handleStep4Complete = useCallback(async () => {
-    // Wait for the API result if it hasn't arrived yet
     if (!crewMatchResult.current && crewMatchPromise.current) {
       await crewMatchPromise.current;
     }
 
     const result = crewMatchResult.current;
     if (result) {
+      const ticketNum = String(result.ticket_number || generateTicketNumber());
       setState((prev) => ({
         ...prev,
         registrationId: (result.registration_id as string) || null,
@@ -115,15 +126,17 @@ export default function RegisterPage() {
         aiSegment: (result.ai_segment as string) || "connector",
         aiReasoningText: (result.ai_reasoning as string) || "",
         aiTags: (result.ai_tags as Record<string, unknown>) || null,
+        ticketNumber: ticketNum,
+        referralCode: generateReferralCode(prev.displayName),
       }));
     }
 
     goToStep(5);
   }, [goToStep]);
 
-  // Step 5 → 6: Enter screening room
+  // Step 5 → 6: Crew accepted → Commitment moment
   const handleCrewAccepted = useCallback(() => {
-    trackEvent("screening_joined", {
+    trackEvent("crew_accepted", {
       crew_id: state.crewId,
       crew_name: state.crewName,
       event_id: event.id,
@@ -162,6 +175,25 @@ export default function RegisterPage() {
     },
     [state.registrationId, state.crewId]
   );
+
+  // Step 6 → 7: Commitment confirmed → Envelope
+  const handleCommitmentConfirmed = useCallback(async () => {
+    if (state.registrationId) {
+      try {
+        await fetch("/api/register", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: state.registrationId,
+            commitment_confirmed: true,
+          }),
+        });
+      } catch {
+        // Non-blocking
+      }
+    }
+    goToStep(7);
+  }, [state.registrationId, goToStep]);
 
   return (
     <main className="bg-black min-h-screen">
@@ -205,7 +237,10 @@ export default function RegisterPage() {
           />
         )}
         {state.currentStep === 6 && (
-          <Step6ScreeningRoom state={state} />
+          <Screen5Commitment onNext={handleCommitmentConfirmed} />
+        )}
+        {state.currentStep === 7 && (
+          <Step7Envelope event={event} state={state} />
         )}
       </ScreenTransition>
     </main>
