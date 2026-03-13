@@ -182,5 +182,5 @@ export const DEMO_EVENT: ScreeningEvent = {
   time: "20:00",
   trailer_url: "/videos/trailer.mp4",
   thumbnail_url: "/images/episode-thumbnail.jpg",
-  postcard_video_url: "/videos/steven-postcard.mp4",
+  postcard_video_url: "/assets/sb-postcard.mp4",
 };
