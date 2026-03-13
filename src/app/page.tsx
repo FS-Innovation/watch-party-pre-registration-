@@ -4,11 +4,14 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black flex items-center justify-center">
       <div className="text-center">
+        <p className="text-doac-gray text-xs tracking-[0.3em] mb-4 animate-fade-in">
+          BEHIND THE DIARY
+        </p>
         <h1 className="font-serif text-4xl md:text-6xl mb-6 animate-fade-in">
-          DOAC
+          Private Screening
         </h1>
         <p className="text-doac-gray text-lg mb-10 animate-fade-in" style={{ animationDelay: "0.5s" }}>
-          Watch Party
+          Find your people. Watch together. Actually connect.
         </p>
         <Link
           href="/register"

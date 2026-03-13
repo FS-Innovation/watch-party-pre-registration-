@@ -1,173 +1,211 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { DEMO_EVENT, INITIAL_STATE, RegistrationState } from "@/lib/types";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { DEMO_EVENT, INITIAL_MATCHMAKING_STATE, MatchmakingState, CREW_SEGMENTS } from "@/lib/types";
 import { initAnalytics, trackEvent, trackPage, getUTMParams } from "@/lib/analytics";
-import { generateTicketNumber, generateReferralCode } from "@/lib/utils";
 import ScreenTransition from "@/components/ScreenTransition";
-import Screen1Invitation from "@/components/Screen1Invitation";
-import Screen2VibePicker from "@/components/Screen2VibePicker";
-import Screen3GuestQuestion from "@/components/Screen3GuestQuestion";
-import Screen4Identity from "@/components/Screen4Identity";
-import Screen5Commitment from "@/components/Screen5Commitment";
-import Screen6Envelope from "@/components/Screen6Envelope";
+import Step1FindYourPeople from "@/components/matchmaking/Step1FindYourPeople";
+import Step2Motivation from "@/components/matchmaking/Step2Motivation";
+import Step3Question from "@/components/matchmaking/Step3Question";
+import Step4FindingCrew from "@/components/matchmaking/Step4FindingCrew";
+import Step5CrewReveal from "@/components/matchmaking/Step5CrewReveal";
+import Step6ScreeningRoom from "@/components/matchmaking/Step6ScreeningRoom";
 
 const event = DEMO_EVENT;
 
 export default function RegisterPage() {
-  const [state, setState] = useState<RegistrationState>(INITIAL_STATE);
+  const [state, setState] = useState<MatchmakingState>(INITIAL_MATCHMAKING_STATE);
+  const crewMatchPromise = useRef<Promise<Record<string, unknown>> | null>(null);
+  const crewMatchResult = useRef<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     initAnalytics();
     const utms = getUTMParams();
-    trackPage("registration", { ...utms, event_id: event.id });
-
-    // Check for referral code
-    const params = new URLSearchParams(window.location.search);
-    const ref = params.get("ref");
-    if (ref) {
-      setState((prev) => ({ ...prev, referredBy: ref }));
-      trackEvent("referral_link_used", { referral_code: ref });
-    }
+    trackPage("preshow_landing", { ...utms, event_id: event.id });
   }, []);
 
-  const goToScreen = useCallback((screen: number) => {
+  const goToStep = useCallback((step: number) => {
     setState((prev) => ({
       ...prev,
-      currentScreen: screen,
-      screenEnteredAt: Date.now(),
+      currentStep: step,
+      stepEnteredAt: Date.now(),
     }));
-    trackEvent("screen_viewed", { screen_number: screen, event_id: event.id });
+    trackEvent("step_viewed", { step_number: step, event_id: event.id });
     window.scrollTo({ top: 0 });
   }, []);
 
-  // Screen 1 → 2
-  const handleInvitationNext = useCallback(() => goToScreen(2), [goToScreen]);
+  // Step 1 → 2: Identity captured
+  const handleStep1Complete = useCallback(
+    (data: { displayName: string; email: string; city: string; timezone: string }) => {
+      setState((prev) => ({ ...prev, ...data }));
+      goToStep(2);
+    },
+    [goToStep]
+  );
 
-  // Screen 2 → 3
-  const handleVibeSelected = useCallback(
-    (choice: string, label: string) => {
+  // Step 2 → 3: Motivation submitted
+  const handleStep2Complete = useCallback(
+    (motivationText: string) => {
+      setState((prev) => ({ ...prev, motivationText }));
+      goToStep(3);
+    },
+    [goToStep]
+  );
+
+  // Step 3 → 4: Question submitted, start crew matching
+  const handleStep3Complete = useCallback(
+    (guestQuestion: string) => {
+      const updatedQuestion = guestQuestion;
+      setState((prev) => ({ ...prev, guestQuestion: updatedQuestion }));
+
+      // Fire the crew matching API call NOW (runs in parallel with the loading screen)
+      crewMatchPromise.current = fetch("/api/crew/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: event.id,
+          display_name: state.displayName,
+          email: state.email,
+          city: state.city,
+          timezone: state.timezone,
+          motivation_text: state.motivationText,
+          guest_question: updatedQuestion,
+          ab_variant: state.abVariant,
+        }),
+      })
+        .then((r) => r.json())
+        .then((result) => {
+          crewMatchResult.current = result;
+          return result;
+        })
+        .catch((err) => {
+          console.error("Crew match error:", err);
+          const fallback = {
+            registration_id: null,
+            crew_id: "fallback",
+            crew_name: "Connection",
+            crew_emoji: "\u{1F91D}",
+            ai_segment: "connector",
+            ai_reasoning: "",
+          };
+          crewMatchResult.current = fallback;
+          return fallback;
+        });
+
+      goToStep(4);
+    },
+    [state, goToStep]
+  );
+
+  // Step 4 → 5: Loading complete, reveal crew
+  const handleStep4Complete = useCallback(async () => {
+    // Wait for the API result if it hasn't arrived yet
+    if (!crewMatchResult.current && crewMatchPromise.current) {
+      await crewMatchPromise.current;
+    }
+
+    const result = crewMatchResult.current;
+    if (result) {
       setState((prev) => ({
         ...prev,
-        segmentChoice: choice,
-        segmentLabel: label,
+        registrationId: (result.registration_id as string) || null,
+        crewId: (result.crew_id as string) || null,
+        crewName: (result.crew_name as string) || "Connection",
+        crewEmoji: (result.crew_emoji as string) || "\u{1F91D}",
+        aiSegment: (result.ai_segment as string) || "connector",
+        aiReasoningText: (result.ai_reasoning as string) || "",
+        aiTags: (result.ai_tags as Record<string, unknown>) || null,
       }));
-      goToScreen(3);
-    },
-    [goToScreen]
-  );
+    }
 
-  // Screen 3 → 4
-  const handleQuestionSubmitted = useCallback(
-    (question: string) => {
-      setState((prev) => ({ ...prev, guestQuestion: question }));
-      goToScreen(4);
-    },
-    [goToScreen]
-  );
+    goToStep(5);
+  }, [goToStep]);
 
-  // Screen 4 → 5 (submit registration)
-  const handleIdentitySubmitted = useCallback(
-    async (data: {
-      firstName: string;
-      email: string;
-      city: string;
-      timezone: string;
-    }) => {
-      const ticketNumber = generateTicketNumber();
-      const referralCode = generateReferralCode(data.firstName);
+  // Step 5 → 6: Enter screening room
+  const handleCrewAccepted = useCallback(() => {
+    trackEvent("screening_joined", {
+      crew_id: state.crewId,
+      crew_name: state.crewName,
+      event_id: event.id,
+    });
+    goToStep(6);
+  }, [state.crewId, state.crewName, goToStep]);
 
-      const updatedState = {
-        ...state,
-        ...data,
-        ticketNumber,
-        referralCode,
-      };
-
-      // Submit to API
+  // Crew switch
+  const handleCrewSwitch = useCallback(
+    async (newCrewId: string) => {
       try {
-        const res = await fetch("/api/register", {
+        const res = await fetch("/api/crew/switch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            event_id: event.id,
-            first_name: data.firstName,
-            email: data.email,
-            city: data.city,
-            timezone: data.timezone,
-            segment_choice: state.segmentChoice,
-            guest_question: state.guestQuestion,
-            ticket_number: ticketNumber,
-            referral_code: referralCode,
-            referred_by: state.referredBy,
+            registration_id: state.registrationId,
+            from_crew_id: state.crewId,
+            to_crew_id: newCrewId,
           }),
         });
 
-        const result = await res.json();
-        if (result.id) {
-          updatedState.registrationId = result.id;
+        const data = await res.json();
+        if (data.crew) {
+          const segInfo = CREW_SEGMENTS[data.crew.primary_segment];
+          setState((prev) => ({
+            ...prev,
+            crewId: data.crew.id,
+            crewName: segInfo?.name || data.crew.name,
+            crewEmoji: segInfo?.emoji || data.crew.emoji,
+            aiSegment: data.crew.primary_segment,
+          }));
         }
       } catch {
-        // Continue even if API fails — don't block the experience
+        // Stay in current crew
       }
-
-      trackEvent("registration_completed", {
-        event_id: event.id,
-        has_question: !!state.guestQuestion,
-        segment: state.segmentChoice,
-        referral_code_used: !!state.referredBy,
-      });
-
-      setState((prev) => ({ ...prev, ...updatedState }));
-      goToScreen(5);
     },
-    [state, goToScreen]
+    [state.registrationId, state.crewId]
   );
-
-  // Screen 5 → 6
-  const handleCommitmentConfirmed = useCallback(async () => {
-    // Update registration with commitment
-    if (state.registrationId) {
-      try {
-        await fetch("/api/register", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: state.registrationId,
-            commitment_confirmed: true,
-          }),
-        });
-      } catch {
-        // Non-blocking
-      }
-    }
-
-    goToScreen(6);
-  }, [state.registrationId, goToScreen]);
 
   return (
     <main className="bg-black min-h-screen">
-      <ScreenTransition screenKey={state.currentScreen}>
-        {state.currentScreen === 1 && (
-          <Screen1Invitation event={event} onNext={handleInvitationNext} />
-        )}
-        {state.currentScreen === 2 && (
-          <Screen2VibePicker onNext={handleVibeSelected} />
-        )}
-        {state.currentScreen === 3 && (
-          <Screen3GuestQuestion
-            event={event}
-            onNext={handleQuestionSubmitted}
+      <ScreenTransition screenKey={state.currentStep}>
+        {state.currentStep === 1 && (
+          <Step1FindYourPeople
+            screeningDate={event.date}
+            screeningTime={event.time}
+            onNext={handleStep1Complete}
           />
         )}
-        {state.currentScreen === 4 && (
-          <Screen4Identity onNext={handleIdentitySubmitted} />
+        {state.currentStep === 2 && (
+          <Step2Motivation
+            displayName={state.displayName}
+            onNext={handleStep2Complete}
+          />
         )}
-        {state.currentScreen === 5 && (
-          <Screen5Commitment onNext={handleCommitmentConfirmed} />
+        {state.currentStep === 3 && (
+          <Step3Question
+            aiSegment={state.aiSegment || "connector"}
+            abVariant={state.abVariant}
+            onNext={handleStep3Complete}
+          />
         )}
-        {state.currentScreen === 6 && (
-          <Screen6Envelope event={event} state={state} />
+        {state.currentStep === 4 && (
+          <Step4FindingCrew
+            onComplete={handleStep4Complete}
+            minimumDelay={4000}
+          />
+        )}
+        {state.currentStep === 5 && (
+          <Step5CrewReveal
+            crewName={state.crewName}
+            crewEmoji={state.crewEmoji}
+            crewId={state.crewId || ""}
+            aiSegment={state.aiSegment}
+            aiReasoningText={state.aiReasoningText}
+            displayName={state.displayName}
+            onEnter={handleCrewAccepted}
+            onSwitch={handleCrewSwitch}
+          />
+        )}
+        {state.currentStep === 6 && (
+          <Step6ScreeningRoom state={state} />
         )}
       </ScreenTransition>
     </main>
