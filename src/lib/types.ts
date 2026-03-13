@@ -175,7 +175,7 @@ export const INITIAL_STATE: RegistrationState = {
 
 export const DEMO_EVENT: ScreeningEvent = {
   id: "screening-001",
-  title: "The Art of Letting Go",
+  title: "Episode 47",
   guest_name: "Dr. Gabor Maté",
   description: "A conversation about trauma, healing, and the courage to feel.",
   date: "2026-03-28",
