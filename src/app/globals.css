@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: #000000;
+  color: #ffffff;
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Underline-style inputs */
+.input-underline {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 0;
+  color: #ffffff;
+  font-size: 1.125rem;
+  padding: 0.75rem 0;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.input-underline:focus {
+  border-bottom-color: #ffffff;
+}
+
+.input-underline::placeholder {
+  color: #666666;
+}
+
+/* Hide video controls */
+video::-webkit-media-controls {
+  display: none !important;
+}
+
+video::-webkit-media-controls-enclosure {
+  display: none !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 2px;
+}
