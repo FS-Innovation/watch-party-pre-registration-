@@ -274,25 +274,6 @@ export default function Step7Envelope({ event, state }: Props) {
                   }}
                 />
 
-                {/* Glassmorphic CTA overlay — appears when video ends */}
-                {videoEnded && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="absolute inset-x-0 bottom-0 p-4 flex justify-center"
-                    style={{
-                      background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 60%, transparent 100%)",
-                    }}
-                  >
-                    <button
-                      onClick={() => handleShare("copy")}
-                      className="backdrop-blur-md bg-white/10 border border-white/20 text-white px-6 py-2.5 text-sm tracking-wide rounded-full hover:bg-white/20 transition-all shadow-[0_4px_30px_rgba(0,0,0,0.3)]"
-                    >
-                      Share your ticket
-                    </button>
-                  </motion.div>
-                )}
               </div>
               <p className="text-doac-gray/40 text-xs text-center mt-3">
                 A message from Steven
@@ -300,22 +281,45 @@ export default function Step7Envelope({ event, state }: Props) {
             </motion.div>
           </div>
 
-          {/* Action buttons */}
+          {/* Action buttons — glassmorphic container lights up when video ends */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
-            className="mt-10"
+            className="mt-10 relative"
           >
-            <div className="flex flex-wrap justify-center gap-4">
-              <button onClick={() => handleShare("copy")} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Share your ticket</button>
-              <button onClick={() => { const url = `${window.location.origin}/register?ref=${state.referralCode}`; navigator.clipboard.writeText(url); trackEvent("referral_link_generated", { referral_code: state.referralCode }); alert("Referral link copied!"); }} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Invite a friend</button>
-              <button onClick={handleSaveCalendar} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Save the date</button>
-            </div>
-            <div className="flex justify-center gap-6 mt-4">
-              <button onClick={() => handleShare("twitter")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">Twitter/X</button>
-              <button onClick={() => handleShare("whatsapp")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">WhatsApp</button>
-            </div>
+            {/* Glow behind the container when video ends */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: videoEnded ? 1 : 0 }}
+              transition={{ duration: 1.2 }}
+              className="absolute -inset-4 rounded-2xl pointer-events-none"
+              style={{
+                background: "radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 70%)",
+              }}
+            />
+
+            <motion.div
+              animate={videoEnded ? {
+                backgroundColor: "rgba(255,255,255,0.04)",
+                borderColor: "rgba(255,255,255,0.12)",
+              } : {
+                backgroundColor: "rgba(255,255,255,0)",
+                borderColor: "rgba(255,255,255,0)",
+              }}
+              transition={{ duration: 1 }}
+              className="relative backdrop-blur-sm rounded-xl border px-6 py-6"
+            >
+              <div className="flex flex-wrap justify-center gap-4">
+                <button onClick={() => handleShare("copy")} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Share your ticket</button>
+                <button onClick={() => { const url = `${window.location.origin}/register?ref=${state.referralCode}`; navigator.clipboard.writeText(url); trackEvent("referral_link_generated", { referral_code: state.referralCode }); alert("Referral link copied!"); }} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Invite a friend</button>
+                <button onClick={handleSaveCalendar} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Save the date</button>
+              </div>
+              <div className="flex justify-center gap-6 mt-4">
+                <button onClick={() => handleShare("twitter")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">Twitter/X</button>
+                <button onClick={() => handleShare("whatsapp")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">WhatsApp</button>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       )}
