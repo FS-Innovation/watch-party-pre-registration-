@@ -285,15 +285,9 @@ export default function Step7Envelope({ event, state }: Props) {
                 guestName={event.guest_name}
                 formattedDate={formattedDate}
                 question={state.guestQuestion}
+                crewEmoji={state.crewEmoji}
+                crewName={state.crewName}
               />
-
-              {state.crewName && (
-                <div className="flex justify-center mt-4">
-                  <span className="text-doac-gray/50 text-xs border border-white/10 px-3 py-1">
-                    {state.crewEmoji} The {state.crewName} Room
-                  </span>
-                </div>
-              )}
             </motion.div>
 
             {/* Postcard side — envelope with draggable postcard */}
@@ -389,15 +383,9 @@ export default function Step7Envelope({ event, state }: Props) {
                 guestName={event.guest_name}
                 formattedDate={formattedDate}
                 question={state.guestQuestion}
+                crewEmoji={state.crewEmoji}
+                crewName={state.crewName}
               />
-
-              {state.crewName && (
-                <div className="flex justify-center mt-4">
-                  <span className="text-doac-gray/50 text-xs border border-white/10 px-3 py-1">
-                    {state.crewEmoji} The {state.crewName} Room
-                  </span>
-                </div>
-              )}
             </motion.div>
 
             {/* Steven's Video Postcard */}
