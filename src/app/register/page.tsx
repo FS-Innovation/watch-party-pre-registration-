@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { DEMO_EVENT, INITIAL_MATCHMAKING_STATE, MatchmakingState, CREW_SEGMENTS } from "@/lib/types";
+import { DEMO_EVENT, INITIAL_MATCHMAKING_STATE, MatchmakingState } from "@/lib/types";
 import { initAnalytics, trackEvent, trackPage, getUTMParams } from "@/lib/analytics";
 import { generateTicketNumber, generateReferralCode } from "@/lib/utils";
 import ScreenTransition from "@/components/ScreenTransition";
@@ -10,7 +10,6 @@ import Step2Motivation from "@/components/matchmaking/Step2Motivation";
 import Step3Question from "@/components/matchmaking/Step3Question";
 import Step4FindingCrew from "@/components/matchmaking/Step4FindingCrew";
 import Step5CrewReveal from "@/components/matchmaking/Step5CrewReveal";
-import Screen5Commitment from "@/components/Screen5Commitment";
 import Step7Envelope from "@/components/matchmaking/Step7Envelope";
 
 const event = DEMO_EVENT;
@@ -20,9 +19,8 @@ const event = DEMO_EVENT;
 // 2. What brings you here tonight? (open text)
 // 3. Question for Steven (A/B tested)
 // 4. Finding your crew... (loading + AI matching)
-// 5. Crew Reveal (AI reasoning, Take me in / Switch rooms)
-// 6. Commitment Moment ("This screening happens once...")
-// 7. The Envelope (sealed → ticket → share → Steven video postcard)
+// 5. Crew Reveal → Commitment (merged: badge flashes → commitment text → "I'll be there")
+// 6. The Envelope (sealed → ticket → share → Steven video postcard)
 
 export default function RegisterPage() {
   const [state, setState] = useState<MatchmakingState>(INITIAL_MATCHMAKING_STATE);
@@ -108,7 +106,7 @@ export default function RegisterPage() {
     [state, goToStep]
   );
 
-  // Step 4 → 5: Loading complete, reveal crew
+  // Step 4 → 5: Loading complete, reveal crew + commitment
   const handleStep4Complete = useCallback(async () => {
     if (!crewMatchResult.current && crewMatchPromise.current) {
       await crewMatchPromise.current;
@@ -134,49 +132,7 @@ export default function RegisterPage() {
     goToStep(5);
   }, [goToStep]);
 
-  // Step 5 → 6: Crew accepted → Commitment moment
-  const handleCrewAccepted = useCallback(() => {
-    trackEvent("crew_accepted", {
-      crew_id: state.crewId,
-      crew_name: state.crewName,
-      event_id: event.id,
-    });
-    goToStep(6);
-  }, [state.crewId, state.crewName, goToStep]);
-
-  // Crew switch
-  const handleCrewSwitch = useCallback(
-    async (newCrewId: string) => {
-      try {
-        const res = await fetch("/api/crew/switch", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            registration_id: state.registrationId,
-            from_crew_id: state.crewId,
-            to_crew_id: newCrewId,
-          }),
-        });
-
-        const data = await res.json();
-        if (data.crew) {
-          const segInfo = CREW_SEGMENTS[data.crew.primary_segment];
-          setState((prev) => ({
-            ...prev,
-            crewId: data.crew.id,
-            crewName: segInfo?.name || data.crew.name,
-            crewEmoji: segInfo?.emoji || data.crew.emoji,
-            aiSegment: data.crew.primary_segment,
-          }));
-        }
-      } catch {
-        // Stay in current crew
-      }
-    },
-    [state.registrationId, state.crewId]
-  );
-
-  // Step 6 → 7: Commitment confirmed → Envelope
+  // Step 5 → 6: Commitment confirmed → Envelope
   const handleCommitmentConfirmed = useCallback(async () => {
     if (state.registrationId) {
       try {
@@ -192,7 +148,7 @@ export default function RegisterPage() {
         // Non-blocking
       }
     }
-    goToStep(7);
+    goToStep(6);
   }, [state.registrationId, goToStep]);
 
   return (
@@ -230,16 +186,11 @@ export default function RegisterPage() {
             crewEmoji={state.crewEmoji}
             crewId={state.crewId || ""}
             aiSegment={state.aiSegment}
-            aiReasoningText={state.aiReasoningText}
             displayName={state.displayName}
-            onEnter={handleCrewAccepted}
-            onSwitch={handleCrewSwitch}
+            onCommit={handleCommitmentConfirmed}
           />
         )}
         {state.currentStep === 6 && (
-          <Screen5Commitment onNext={handleCommitmentConfirmed} />
-        )}
-        {state.currentStep === 7 && (
           <Step7Envelope event={event} state={state} />
         )}
       </ScreenTransition>
