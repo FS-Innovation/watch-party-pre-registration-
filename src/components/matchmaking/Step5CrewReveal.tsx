@@ -72,6 +72,9 @@ export default function Step5CrewReveal({
             transition={{ duration: 0.8 }}
             className="text-center"
           >
+            <p className="text-doac-gray text-xs tracking-[0.3em] uppercase mb-6">
+              You&apos;re watching with
+            </p>
             <span className="text-6xl block mb-4">{crewEmoji}</span>
             <h2 className="font-serif text-4xl md:text-5xl text-white">
               {crewName}
