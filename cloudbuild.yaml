@@ -1,5 +1,7 @@
 steps:
   # Build the Docker image
+  # NEXT_PUBLIC_ vars are baked into the client JS bundle at build time.
+  # They're passed as build args from Cloud Build substitution variables.
   - name: "gcr.io/cloud-builders/docker"
     args:
       - "build"
@@ -7,10 +9,6 @@ steps:
       - "NEXT_PUBLIC_SUPABASE_URL=${_NEXT_PUBLIC_SUPABASE_URL}"
       - "--build-arg"
       - "NEXT_PUBLIC_SUPABASE_ANON_KEY=${_NEXT_PUBLIC_SUPABASE_ANON_KEY}"
-      - "--build-arg"
-      - "NEXT_PUBLIC_RUDDERSTACK_WRITE_KEY=${_NEXT_PUBLIC_RUDDERSTACK_WRITE_KEY}"
-      - "--build-arg"
-      - "NEXT_PUBLIC_RUDDERSTACK_DATA_PLANE_URL=${_NEXT_PUBLIC_RUDDERSTACK_DATA_PLANE_URL}"
       - "-t"
       - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${SHORT_SHA}"
       - "-t"
@@ -25,6 +23,8 @@ steps:
       - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}"
 
   # Deploy to Cloud Run
+  # --set-secrets maps Secret Manager secrets → env vars the app expects.
+  # Format: ENV_VAR_NAME=SECRET_MANAGER_SECRET_NAME:version
   - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
     entrypoint: gcloud
     args:
@@ -51,16 +51,15 @@ steps:
       - "--port"
       - "8080"
       - "--set-secrets"
-      - "SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,ADMIN_SECRET=ADMIN_SECRET:latest,RESEND_API_KEY=RESEND_API_KEY:latest,TWILIO_ACCOUNT_SID=TWILIO_ACCOUNT_SID:latest,TWILIO_AUTH_TOKEN=TWILIO_AUTH_TOKEN:latest,TWILIO_PHONE_NUMBER=TWILIO_PHONE_NUMBER:latest"
+      - "SUPABASE_SERVICE_ROLE_KEY=WP_SUPABASE_SERVICE_ROLE_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,ADMIN_SECRET=PRE_REG_ADMIN_SECRET:latest,RESEND_API_KEY=WP_RESEND_API_KEY:latest,TWILIO_ACCOUNT_SID=PRE_REG_TWILIO_ACCOUNT_SID:latest,TWILIO_AUTH_TOKEN=PRE_REG_TWILIO_AUTH_TOKEN:latest,TWILIO_PHONE_NUMBER=PRE_REG_TWILIO_PHONE_NUMBER:latest"
 
 substitutions:
   _SERVICE_NAME: btd-pre-registration
   _REGION: us-central1
   _REPO_NAME: btd-watch-party
+  # Set these in Cloud Build trigger settings (or pass via --substitutions)
   _NEXT_PUBLIC_SUPABASE_URL: ""
   _NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
-  _NEXT_PUBLIC_RUDDERSTACK_WRITE_KEY: ""
-  _NEXT_PUBLIC_RUDDERSTACK_DATA_PLANE_URL: ""
 
 options:
   logging: CLOUD_LOGGING_ONLY
