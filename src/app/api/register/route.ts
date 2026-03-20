@@ -128,6 +128,16 @@ export async function POST(request: NextRequest) {
       sendRegistrationConfirmationSMS(clean.phone, clean.display_name).catch(console.error);
     }
 
+    // Send confirmation email via Resend (async, non-blocking)
+    if (clean.email) {
+      sendConfirmationEmail({
+        email: clean.email,
+        first_name: clean.display_name,
+        ticket_number,
+        guest_question: clean.guest_question,
+      }).catch(console.error);
+    }
+
     return NextResponse.json({
       registration_id: registration.id,
       ticket_number: registration.ticket_number,
@@ -301,6 +311,92 @@ Return ONLY the JSON object, no other text.`,
   } catch {
     // AI tagging is non-critical
   }
+}
+
+async function sendConfirmationEmail(params: {
+  email: string;
+  first_name: string;
+  ticket_number: string;
+  guest_question?: string;
+}) {
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) {
+    console.warn("RESEND_API_KEY not set — confirmation email not sent");
+    return;
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_VERCEL_URL || "https://watchparty.btd.com";
+
+  try {
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${resendKey}`,
+      },
+      body: JSON.stringify({
+        from: process.env.RESEND_FROM_ADDRESS || "onboarding@resend.dev",
+        to: params.email,
+        subject: `You're in — Ticket #${params.ticket_number}`,
+        html: buildConfirmationHtml(params),
+      }),
+    });
+  } catch (err) {
+    console.error("Resend email error:", err);
+  }
+}
+
+function buildConfirmationHtml(params: {
+  first_name: string;
+  ticket_number: string;
+  guest_question?: string;
+}) {
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#000000;font-family:Georgia,'Times New Roman',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;padding:40px 20px;">
+    <tr><td align="center">
+      <table width="480" cellpadding="0" cellspacing="0" style="border:1px solid rgba(255,255,255,0.2);">
+        <tr>
+          <td style="padding:30px 30px 20px;border-bottom:1px solid rgba(255,255,255,0.1);">
+            <table width="100%"><tr>
+              <td>
+                <h1 style="margin:0;color:#ffffff;font-size:28px;letter-spacing:0.2em;">DOAC</h1>
+                <p style="margin:4px 0 0;color:#AAAAAA;font-size:10px;letter-spacing:0.3em;">PRIVATE SCREENING</p>
+              </td>
+              <td align="right">
+                <p style="margin:0;color:#AAAAAA;font-size:10px;">NO.</p>
+                <p style="margin:0;color:#ffffff;font-size:24px;">#${params.ticket_number}</p>
+              </td>
+            </tr></table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:25px 30px;">
+            <p style="color:#AAAAAA;font-size:10px;letter-spacing:0.3em;margin:0 0 4px;">GUEST</p>
+            <p style="color:#ffffff;font-size:18px;margin:0 0 20px;">${params.first_name}</p>
+            <p style="color:rgba(255,255,255,0.8);font-size:14px;margin:0 0 20px;">
+              You're registered. We'll send your private screening link before the event starts.
+            </p>
+            ${params.guest_question ? `
+            <p style="color:#AAAAAA;font-size:10px;letter-spacing:0.3em;margin:0 0 4px;">YOUR QUESTION</p>
+            <p style="color:rgba(255,255,255,0.8);font-size:13px;font-style:italic;margin:0;">"${params.guest_question}"</p>
+            ` : ""}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:20px 30px;border-top:1px solid rgba(255,255,255,0.1);">
+            <p style="color:#AAAAAA;font-size:11px;margin:0;text-align:center;">
+              Keep this ticket. See you at the screening.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
 }
 
 async function sendRegistrationConfirmationSMS(phone: string, name: string) {
