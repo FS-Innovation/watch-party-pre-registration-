@@ -87,129 +87,172 @@ export default function Step1FindYourPeople({ screeningDate, screeningTime, onNe
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-16 relative">
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-12 relative">
+      {/* Warm glow at top */}
+      <div
+        className="absolute top-0 left-0 right-0 h-[2px] pointer-events-none"
+        style={{
+          background: "linear-gradient(90deg, transparent 5%, rgba(233,69,96,0.4) 30%, rgba(233,69,96,0.6) 50%, rgba(233,69,96,0.4) 70%, transparent 95%)",
+        }}
+      />
+      <div
+        className="absolute top-0 left-0 right-0 h-32 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at top center, rgba(233,69,96,0.08) 0%, transparent 70%)",
+        }}
+      />
+
       {/* Countdown background */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <span className="font-mono text-[8rem] md:text-[12rem] text-white/[0.04] font-bold tracking-widest select-none">
+        <span className="font-mono text-[8rem] md:text-[12rem] text-white/[0.03] font-bold tracking-widest select-none">
           {countdown}
         </span>
       </div>
 
-      <div className="relative z-10 w-full max-w-md text-center">
-        {/* Label */}
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-doac-gray text-xs tracking-[0.3em] mb-6"
+      {/* Cinema screen container */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8 }}
+        className="relative z-10 w-full max-w-3xl"
+      >
+        {/* Screen frame */}
+        <div
+          className="relative rounded-lg overflow-hidden"
+          style={{
+            background: "linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 30%, rgba(0,0,0,0.3) 100%)",
+            boxShadow: "0 0 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08), inset 0 -1px 0 rgba(255,255,255,0.03)",
+          }}
         >
-          BEHIND THE DIARY &middot; PRIVATE SCREENING
-        </motion.p>
+          <div className="border border-white/[0.08] rounded-lg">
+            <div className="px-8 py-12 md:px-16 md:py-16">
+              {/* Heading */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="text-center mb-12"
+              >
+                <h1 className="font-serif text-4xl md:text-5xl text-white mb-3">
+                  Take your seat
+                </h1>
+                <p className="text-doac-gray/60 text-xs tracking-[0.3em] uppercase">
+                  Private Screening Registration
+                </p>
+              </motion.div>
 
-        {/* Heading */}
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          className="font-serif text-4xl md:text-5xl text-white mb-6"
-        >
-          You&apos;re Invited
-        </motion.h1>
+              {/* Form */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="max-w-md mx-auto space-y-8"
+              >
+                {/* Name */}
+                <div>
+                  <label className="text-doac-gray/70 text-sm mb-2 block">Name</label>
+                  <input
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="E.g. Julian Noir"
+                    className="input-underline text-base"
+                    autoComplete="given-name"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
+                        emailInput?.focus();
+                      }
+                    }}
+                  />
+                </div>
 
-        {/* Subtext */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-doac-gray text-base leading-relaxed mb-14 max-w-sm mx-auto"
-        >
-          A few quick details and you&apos;re in.
-        </motion.p>
+                {/* Email */}
+                <div>
+                  <label className="text-doac-gray/70 text-sm mb-2 block">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="julian@cinema.noir"
+                    className="input-underline text-base"
+                    autoComplete="email"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const phoneInput = document.querySelector('input[type="tel"]') as HTMLInputElement;
+                        phoneInput?.focus();
+                      }
+                    }}
+                  />
+                </div>
 
-        {/* Form */}
+                {/* Phone */}
+                <div>
+                  <label className="text-doac-gray/70 text-sm mb-2 block">Phone number</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
+                    className="input-underline text-base"
+                    autoComplete="tel"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const cityInput = document.querySelector('input[autocomplete="address-level2"]') as HTMLInputElement;
+                        cityInput?.focus();
+                      }
+                    }}
+                  />
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="text-doac-gray/70 text-sm mb-2 block">Location</label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => {
+                      setCity(e.target.value);
+                      setCityDetected(false);
+                    }}
+                    placeholder="Your city"
+                    className="input-underline text-base"
+                    autoComplete="address-level2"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && displayName.trim() && email.trim() && phone.trim()) handleSubmit();
+                    }}
+                  />
+                  {cityDetected && (
+                    <p className="text-doac-gray/30 text-[10px] tracking-[0.2em] uppercase mt-2">
+                      Auto-detected for premiere scheduling
+                    </p>
+                  )}
+                </div>
+
+                {error && (
+                  <p className="text-doac-red text-sm text-center">{error}</p>
+                )}
+              </motion.div>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA below the screen */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="space-y-6"
+          transition={{ duration: 0.6, delay: 0.7 }}
+          className="mt-8 text-center"
         >
-          <input
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder="What should we call you?"
-            className="input-underline text-center text-lg"
-            autoComplete="given-name"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const emailInput = document.querySelector('input[type="email"]') as HTMLInputElement;
-                emailInput?.focus();
-              }
-            }}
-          />
-
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Your email"
-            className="input-underline text-center"
-            autoComplete="email"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                const phoneInput = document.querySelector('input[type="tel"]') as HTMLInputElement;
-                phoneInput?.focus();
-              }
-            }}
-          />
-
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="Your phone number"
-            className="input-underline text-center"
-            autoComplete="tel"
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && displayName.trim() && email.trim() && phone.trim()) handleSubmit();
-            }}
-          />
-
-          <div>
-            <input
-              type="text"
-              value={city}
-              onChange={(e) => {
-                setCity(e.target.value);
-                setCityDetected(false);
-              }}
-              placeholder="Your city"
-              className="input-underline text-center"
-              autoComplete="address-level2"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && displayName.trim() && email.trim() && phone.trim()) handleSubmit();
-              }}
-            />
-            {cityDetected && (
-              <p className="text-doac-gray/40 text-xs mt-2">
-                Based on your location
-              </p>
-            )}
-          </div>
-
-          {error && (
-            <p className="text-doac-red text-sm">{error}</p>
-          )}
-
           <button
             onClick={handleSubmit}
-            className="w-full bg-doac-red text-white py-4 text-lg tracking-wide hover:opacity-90 transition-opacity mt-4"
+            className="bg-doac-red text-white px-16 py-4 text-sm tracking-[0.2em] uppercase hover:opacity-90 transition-opacity"
           >
             I&apos;m in
           </button>
         </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 }
