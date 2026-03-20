@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
-import { sendSMS } from "@/lib/twilio";
+// SMS disabled — Twilio not yet confirmed
+// import { sendSMS } from "@/lib/twilio";
 
 // Allowed fields for PATCH updates (lockdown)
 const ALLOWED_PATCH_FIELDS = new Set([
@@ -123,10 +124,10 @@ export async function POST(request: NextRequest) {
       tagQuestion(registration.id, clean.guest_question).catch(console.error);
     }
 
-    // Send registration confirmation SMS (async, non-blocking)
-    if (clean.phone) {
-      sendRegistrationConfirmationSMS(clean.phone, clean.display_name).catch(console.error);
-    }
+    // SMS disabled — Twilio not yet confirmed
+    // if (clean.phone) {
+    //   sendRegistrationConfirmationSMS(clean.phone, clean.display_name).catch(console.error);
+    // }
 
     return NextResponse.json({
       registration_id: registration.id,
