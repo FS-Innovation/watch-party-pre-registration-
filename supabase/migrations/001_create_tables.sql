@@ -43,11 +43,11 @@ CREATE TABLE IF NOT EXISTS signal_responses (
 );
 
 -- Indexes
-CREATE INDEX idx_registrations_event_id ON registrations(event_id);
-CREATE INDEX idx_registrations_email ON registrations(email);
-CREATE INDEX idx_registrations_referral_code ON registrations(referral_code);
-CREATE INDEX idx_referrals_referral_code ON referrals(referral_code);
-CREATE INDEX idx_signal_responses_registration_id ON signal_responses(registration_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_event_id ON registrations(event_id);
+CREATE INDEX IF NOT EXISTS idx_registrations_email ON registrations(email);
+CREATE INDEX IF NOT EXISTS idx_registrations_referral_code ON registrations(referral_code);
+CREATE INDEX IF NOT EXISTS idx_referrals_referral_code ON referrals(referral_code);
+CREATE INDEX IF NOT EXISTS idx_signal_responses_registration_id ON signal_responses(registration_id);
 
 -- Enable Row Level Security
 ALTER TABLE registrations ENABLE ROW LEVEL SECURITY;
@@ -55,22 +55,29 @@ ALTER TABLE referrals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE signal_responses ENABLE ROW LEVEL SECURITY;
 
 -- Policies: allow inserts from anon key (public registration)
+-- Using DROP IF EXISTS + CREATE to make this idempotent (re-runnable)
+DROP POLICY IF EXISTS "Allow public inserts" ON registrations;
 CREATE POLICY "Allow public inserts" ON registrations
   FOR INSERT TO anon WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow public reads for count" ON registrations;
 CREATE POLICY "Allow public reads for count" ON registrations
   FOR SELECT TO anon USING (true);
 
 -- Note: public UPDATE removed — API routes use service_role key for updates
 
+DROP POLICY IF EXISTS "Allow public inserts" ON referrals;
 CREATE POLICY "Allow public inserts" ON referrals
   FOR INSERT TO anon WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow public reads" ON referrals;
 CREATE POLICY "Allow public reads" ON referrals
   FOR SELECT TO anon USING (true);
 
+DROP POLICY IF EXISTS "Allow public inserts" ON signal_responses;
 CREATE POLICY "Allow public inserts" ON signal_responses
   FOR INSERT TO anon WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow public reads" ON signal_responses;
 CREATE POLICY "Allow public reads" ON signal_responses
   FOR SELECT TO anon USING (true);

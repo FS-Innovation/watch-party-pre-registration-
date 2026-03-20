@@ -26,9 +26,11 @@ CREATE INDEX IF NOT EXISTS idx_meet_greet_intent_user_id ON meet_greet_intent(us
 -- RLS for meet_greet_intent
 ALTER TABLE meet_greet_intent ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public inserts on meet_greet_intent" ON meet_greet_intent;
 CREATE POLICY "Allow public inserts on meet_greet_intent" ON meet_greet_intent
   FOR INSERT TO anon WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Allow public reads on meet_greet_intent" ON meet_greet_intent;
 CREATE POLICY "Allow public reads on meet_greet_intent" ON meet_greet_intent
   FOR SELECT TO anon USING (true);
 
