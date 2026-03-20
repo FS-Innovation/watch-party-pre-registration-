@@ -39,7 +39,7 @@ export default function Step2Motivation({ displayName, onNext }: Props) {
         >
           <span className="text-doac-gray text-xs tracking-[0.2em]">QUICK INTRO</span>
           <span className="text-doac-gray/40 text-xs">&middot;</span>
-          <span className="text-white text-xs">1 of 3</span>
+          <span className="text-white text-xs">1 of 2</span>
         </motion.div>
 
         {/* Question */}
@@ -58,7 +58,7 @@ export default function Step2Motivation({ displayName, onNext }: Props) {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="text-doac-gray text-sm mb-10"
         >
-          Help us connect you with the right people and make this night unforgettable.
+          This helps us shape the conversation on the night.
         </motion.p>
 
         {/* Text input */}
