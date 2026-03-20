@@ -188,6 +188,8 @@ export default function RegisterPage() {
           <Step9MeetAndGreet
             displayName={state.displayName}
             registrationId={state.registrationId}
+            event={event}
+            state={state}
             onComplete={handleMeetGreetComplete}
           />
         )}

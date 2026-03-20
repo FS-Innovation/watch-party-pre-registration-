@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { trackEvent } from "@/lib/analytics";
 import { ScreeningEvent, MatchmakingState } from "@/lib/types";
-import { formatDateForTimezone, generateICS } from "@/lib/utils";
+import { formatDateForTimezone } from "@/lib/utils";
 import CinemaTicket from "@/components/CinemaTicket";
 
 interface Props {
@@ -68,43 +68,6 @@ export default function Step7Envelope({ event, state, onNext }: Props) {
       return () => clearTimeout(t);
     }
   }, [phase, state.ticketNumber]);
-
-  const handleShare = async (method: string) => {
-    trackEvent("ticket_shared", { share_method: method, ticket_number: state.ticketNumber });
-    const refUrl = `${window.location.origin}/register?ref=${state.referralCode}`;
-
-    if (method === "copy") {
-      await navigator.clipboard.writeText(refUrl);
-      alert("Link copied!");
-    } else if (method === "twitter") {
-      const text = encodeURIComponent(
-        `I just got my ticket to the Behind The Diary screening of "${event.title}" with ${event.guest_name}. Grab yours:`
-      );
-      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(refUrl)}`, "_blank");
-    } else if (method === "whatsapp") {
-      const text = encodeURIComponent(
-        `I just got my ticket to the Behind The Diary screening. Join me: ${refUrl}`
-      );
-      window.open(`https://wa.me/?text=${text}`, "_blank");
-    }
-  };
-
-  const handleSaveCalendar = () => {
-    const ics = generateICS(
-      `Behind The Diary: ${event.title}`,
-      `Private screening with ${event.guest_name}`,
-      event.date,
-      event.time
-    );
-    const blob = new Blob([ics], { type: "text/calendar" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "behind-the-diary-screening.ics";
-    a.click();
-    URL.revokeObjectURL(url);
-    trackEvent("calendar_saved", { ticket_number: state.ticketNumber });
-  };
 
   const formattedDate = formatDateForTimezone(event.date, event.time, state.timezone || "UTC");
 
@@ -279,63 +242,22 @@ export default function Step7Envelope({ event, state, onNext }: Props) {
             </motion.div>
           </div>
 
-          {/* Action buttons — glassmorphic container lights up when video ends */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="mt-10 relative"
-          >
-            {/* Glow behind the container when video ends */}
+          {/* Continue to meet and greet — appears after video ends */}
+          {onNext && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: videoEnded ? 1 : 0 }}
-              transition={{ duration: 1.2 }}
-              className="absolute -inset-4 rounded-2xl pointer-events-none"
-              style={{
-                background: "radial-gradient(ellipse at center, rgba(255,255,255,0.06) 0%, transparent 70%)",
-              }}
-            />
-
-            <motion.div
-              animate={videoEnded ? {
-                backgroundColor: "rgba(255,255,255,0.04)",
-                borderColor: "rgba(255,255,255,0.12)",
-              } : {
-                backgroundColor: "rgba(255,255,255,0)",
-                borderColor: "rgba(255,255,255,0)",
-              }}
-              transition={{ duration: 1 }}
-              className="relative backdrop-blur-sm rounded-xl border px-6 py-6"
+              transition={{ delay: 0.5, duration: 0.8 }}
+              className="mt-10 text-center"
             >
-              <div className="flex flex-wrap justify-center gap-4">
-                <button onClick={() => handleShare("copy")} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Share your ticket</button>
-                <button onClick={() => { const url = `${window.location.origin}/register?ref=${state.referralCode}`; navigator.clipboard.writeText(url); trackEvent("referral_link_generated", { referral_code: state.referralCode }); alert("Referral link copied!"); }} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Invite a friend</button>
-                <button onClick={handleSaveCalendar} className="text-doac-gray text-sm border border-white/20 px-5 py-2 hover:border-white/50 transition-colors">Save the date</button>
-              </div>
-              <div className="flex justify-center gap-6 mt-4">
-                <button onClick={() => handleShare("twitter")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">Twitter/X</button>
-                <button onClick={() => handleShare("whatsapp")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">WhatsApp</button>
-              </div>
-            </motion.div>
-
-            {/* Continue to meet and greet */}
-            {onNext && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: videoEnded ? 1 : 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="mt-8 text-center"
+              <button
+                onClick={onNext}
+                className="border border-white/60 text-white px-12 py-4 text-lg tracking-wide hover:border-white transition-colors"
               >
-                <button
-                  onClick={onNext}
-                  className="text-doac-gray text-sm hover:text-white transition-colors underline underline-offset-4"
-                >
-                  Continue
-                </button>
-              </motion.div>
-            )}
-          </motion.div>
+                Continue
+              </button>
+            </motion.div>
+          )}
         </div>
       )}
     </div>
