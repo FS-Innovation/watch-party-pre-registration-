@@ -1,0 +1,65 @@
+steps:
+  # Build the Docker image
+  # NEXT_PUBLIC_ vars are baked into the client JS bundle at build time.
+  # They're passed as build args from Cloud Build substitution variables.
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "--build-arg"
+      - "NEXT_PUBLIC_SUPABASE_URL=${_NEXT_PUBLIC_SUPABASE_URL}"
+      - "--build-arg"
+      - "NEXT_PUBLIC_SUPABASE_ANON_KEY=${_NEXT_PUBLIC_SUPABASE_ANON_KEY}"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${SHORT_SHA}"
+      - "-t"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:latest"
+      - "."
+
+  # Push to Artifact Registry
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "--all-tags"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}"
+
+  # Deploy to Cloud Run
+  # --set-secrets maps Secret Manager secrets → env vars the app expects.
+  # Format: ENV_VAR_NAME=SECRET_MANAGER_SECRET_NAME:version
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "${_SERVICE_NAME}"
+      - "--image"
+      - "${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${SHORT_SHA}"
+      - "--region"
+      - "${_REGION}"
+      - "--platform"
+      - "managed"
+      - "--allow-unauthenticated"
+      - "--memory"
+      - "1Gi"
+      - "--cpu"
+      - "1"
+      - "--concurrency"
+      - "100"
+      - "--min-instances"
+      - "0"
+      - "--max-instances"
+      - "10"
+      - "--port"
+      - "8080"
+      - "--set-secrets"
+      - "SUPABASE_SERVICE_ROLE_KEY=WP_SUPABASE_SERVICE_ROLE_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,RESEND_API_KEY=WP_RESEND_API_KEY:latest"
+
+substitutions:
+  _SERVICE_NAME: btd-pre-registration
+  _REGION: us-central1
+  _REPO_NAME: btd-watch-party
+  # Set these in Cloud Build trigger settings (or pass via --substitutions)
+  _NEXT_PUBLIC_SUPABASE_URL: ""
+  _NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -25,7 +25,7 @@ Both share the same Supabase project (Pro tier) and the same user identity. A pe
 |---------|---------|------|
 | **Supabase** | PostgreSQL database, auth, real-time subscriptions | Pro ($25/mo) |
 | **Next.js 14** | App framework (App Router, API routes, SSR) | — |
-| **Vercel** (recommended) | Hosting, edge functions, CDN | Pro |
+| **Google Cloud Run** | Container hosting, auto-scaling, CDN | Pay-per-use |
 | **Zoom** | Video infrastructure for the screening | Business |
 | **Anthropic Claude API** | AI clustering, sentiment analysis, question tagging | Pay-per-use |
 | **Resend** | Transactional email (ticket confirmations) | Free tier likely sufficient |
@@ -291,7 +291,71 @@ The magic token is **permanent and device-independent** — it works on any devi
 
 ---
 
-## 6. What's Next: Watch Party Web App
+## 6. Google Cloud Run Deployment
+
+### How It Works
+
+The app runs as a Docker container on Cloud Run. Multi-stage build: install deps → build Next.js (standalone mode) → slim production image.
+
+### Setup Steps
+
+1. **Create GCP project** (or use existing one)
+2. **Enable APIs:**
+   ```bash
+   gcloud services enable run.googleapis.com artifactregistry.googleapis.com cloudbuild.googleapis.com secretmanager.googleapis.com
+   ```
+3. **Create Artifact Registry repo:**
+   ```bash
+   gcloud artifacts repositories create btd-watch-party --repository-format=docker --location=us-central1
+   ```
+4. **Store secrets in Secret Manager:**
+   ```bash
+   echo -n "your-value" | gcloud secrets create SUPABASE_SERVICE_ROLE_KEY --data-file=-
+   echo -n "your-value" | gcloud secrets create ANTHROPIC_API_KEY --data-file=-
+   echo -n "your-value" | gcloud secrets create ADMIN_SECRET --data-file=-
+   echo -n "your-value" | gcloud secrets create RESEND_API_KEY --data-file=-
+   echo -n "your-value" | gcloud secrets create TWILIO_ACCOUNT_SID --data-file=-
+   echo -n "your-value" | gcloud secrets create TWILIO_AUTH_TOKEN --data-file=-
+   echo -n "your-value" | gcloud secrets create TWILIO_PHONE_NUMBER --data-file=-
+   ```
+5. **Grant Cloud Run access to secrets:**
+   ```bash
+   gcloud secrets add-iam-policy-binding SUPABASE_SERVICE_ROLE_KEY \
+     --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+     --role="roles/secretmanager.secretAccessor"
+   # Repeat for each secret
+   ```
+6. **Deploy manually (first time):**
+   ```bash
+   gcloud run deploy btd-pre-registration \
+     --source . \
+     --region us-central1 \
+     --allow-unauthenticated \
+     --memory 1Gi \
+     --port 8080
+   ```
+7. **Or use Cloud Build (CI/CD):** Push to repo → Cloud Build triggers → builds image → deploys to Cloud Run. See `cloudbuild.yaml`.
+
+### Custom Domain
+
+After deployment, map your domain:
+```bash
+gcloud run domain-mappings create --service btd-pre-registration --domain register.steven.com --region us-central1
+```
+
+### Cost Estimate
+
+| Traffic | Estimated Monthly Cost |
+|---------|----------------------|
+| 1,000 registrations/event | ~$5-10 |
+| 5,000 registrations/event | ~$10-20 |
+| Idle (between events) | ~$0 (scale to zero) |
+
+Cloud Run charges only when handling requests. Between events, cost is effectively zero.
+
+---
+
+## 7. What's Next: Watch Party Web App
 
 ### Core Features (Priority Order)
 
@@ -322,8 +386,9 @@ The magic token is **permanent and device-independent** — it works on any devi
 | 2 | Table naming | **Keep `registrations`** — all new tables use `registration_id` as FK. |
 | 3 | Chat in v1? | **No.** Structured features only. Emoji reactions as v2 candidate. |
 | 4 | Camera-on tracking | **Manual observation** at 3 moments + web app engagement as primary quantitative metric. |
-| 5 | Realtime limits | **Pending** — need watch party PRD to finalize broadcast pattern + polling fallback design. |
-| 6 | Pre-event vs live questions | **Pending** — need PRD for Ask Steven live flow, moderator view, and question routing. |
+| 5 | Realtime architecture | **Supabase Realtime broadcast pattern.** One channel per session, admin pushes phase/poll changes, all clients receive. Polling fallback at 5s intervals built in from day 1. No per-table subscriptions. |
+| 6 | Pre-event vs live questions | **Two separate flows.** `signal_responses` = pre-reg questions (AI-ranked, shown on admin Q&A "Pre-event" tab). `live_questions` = real-time Ask Steven during screening (AI-filtered, community upvoted, shown on admin Q&A "Live" tab). Same person via `registration_id`. |
+| 7 | Hosting | **Google Cloud Run** for pre-registration. Dockerfile + Cloud Build CI/CD. Secrets in Secret Manager. |
 
 ---
 
@@ -338,7 +403,9 @@ The magic token is **permanent and device-independent** — it works on any devi
 | 🔲 Supabase config | Run migration, enable pooling, set env vars | Sam — this week |
 | 🔲 Twilio setup | Create account, buy number, add env vars | Sam — this week |
 | 🔲 Load testing | Hire freelancer or run k6 scripts | 1-2 weeks |
-| 🔲 Watch party PRD | Sam finalizing — covers all screens, interactions, realtime needs | In progress |
+| ✅ Watch party PRD | Finalized — covers all screens, interactions, realtime, admin dashboard | Done |
+| ✅ GCP deployment config | Dockerfile, Cloud Build, Secret Manager integration | Done |
+| ✅ Schema alignment | Migration 005 — added display_name, ab_variant, ai_segment, ai_reasoning_text | Done |
 | 🔲 Watch party web app | Magic link auth, polls, cards, Ask Steven, photobooth, admin | After PRD |
 
 ---
