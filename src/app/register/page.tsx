@@ -10,7 +10,6 @@ import Step2Motivation from "@/components/matchmaking/Step2Motivation";
 import Step3Question from "@/components/matchmaking/Step3Question";
 import Step5CrewReveal from "@/components/matchmaking/Step5CrewReveal";
 import Step7Envelope from "@/components/matchmaking/Step7Envelope";
-import Step9MeetAndGreet from "@/components/matchmaking/Step9MeetAndGreet";
 import { useEffect } from "react";
 
 const event = DEMO_EVENT;
@@ -20,8 +19,7 @@ const event = DEMO_EVENT;
 // 2. What brings you here tonight? (open text)
 // 3. Question for Steven (A/B tested)
 // 4. Commitment ("This screening happens once...")
-// 5. The Envelope (sealed → ticket → share → Steven video postcard)
-// 6. Meet and Greet intent (new)
+// 5. The Envelope (sealed → ticket → video → meet & greet → share)
 
 export default function RegisterPage() {
   const [state, setState] = useState<MatchmakingState>(INITIAL_MATCHMAKING_STATE);
@@ -125,12 +123,11 @@ export default function RegisterPage() {
     goToStep(5);
   }, [state.registrationId, goToStep]);
 
-  // Step 6: Meet and greet complete
+  // Meet and greet complete (called from within the envelope screen)
   const handleMeetGreetComplete = useCallback(
     async (wants: boolean, why: string) => {
       setState((prev) => ({ ...prev, meetGreetWants: wants, meetGreetWhy: why }));
 
-      // Submit meet-and-greet intent to API
       if (state.registrationId) {
         try {
           await fetch("/api/meet-greet", {
@@ -146,8 +143,6 @@ export default function RegisterPage() {
           // Non-blocking
         }
       }
-
-      // Flow complete — stay on the confirmation screen
     },
     [state.registrationId]
   );
@@ -182,15 +177,10 @@ export default function RegisterPage() {
           />
         )}
         {state.currentStep === 5 && (
-          <Step7Envelope event={event} state={state} onNext={() => goToStep(6)} />
-        )}
-        {state.currentStep === 6 && (
-          <Step9MeetAndGreet
-            displayName={state.displayName}
-            registrationId={state.registrationId}
+          <Step7Envelope
             event={event}
             state={state}
-            onComplete={handleMeetGreetComplete}
+            onMeetGreetComplete={handleMeetGreetComplete}
           />
         )}
       </ScreenTransition>
