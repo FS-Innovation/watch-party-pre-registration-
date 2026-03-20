@@ -128,16 +128,6 @@ export async function POST(request: NextRequest) {
       sendRegistrationConfirmationSMS(clean.phone, clean.display_name).catch(console.error);
     }
 
-    // Send confirmation email via Resend (async, non-blocking)
-    if (clean.email) {
-      sendConfirmationEmail({
-        email: clean.email,
-        first_name: clean.display_name,
-        ticket_number,
-        guest_question: clean.guest_question,
-      }).catch(console.error);
-    }
-
     return NextResponse.json({
       registration_id: registration.id,
       ticket_number: registration.ticket_number,
@@ -184,6 +174,24 @@ export async function PATCH(request: NextRequest) {
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    // Send confirmation email after commitment (high-intent signal)
+    if (updates.commitment_confirmed) {
+      const { data: reg } = await db
+        .from("registrations")
+        .select("email, display_name, ticket_number, guest_question")
+        .eq("id", id)
+        .single();
+
+      if (reg?.email) {
+        sendConfirmationEmail({
+          email: reg.email,
+          first_name: reg.display_name,
+          ticket_number: reg.ticket_number,
+          guest_question: reg.guest_question,
+        }).catch(console.error);
+      }
     }
 
     return NextResponse.json({ success: true });
