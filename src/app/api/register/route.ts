@@ -335,7 +335,7 @@ async function sendConfirmationEmail(params: {
         Authorization: `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
-        from: process.env.RESEND_FROM_ADDRESS || "DOAC <tickets@steven.com>",
+        from: process.env.RESEND_FROM_ADDRESS || "onboarding@resend.dev",
         to: params.email,
         subject: `You're in — Ticket #${params.ticket_number}`,
         html: buildConfirmationHtml(params),
