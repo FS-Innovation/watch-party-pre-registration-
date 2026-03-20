@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Store in signal_responses table for pre-registration questions
-    const { error } = await supabase.from("signal_responses").insert({
+    const { error } = await db.from("signal_responses").insert({
       question_key: "guest_question",
       answer_text: question,
       segment_tag: event_id || "",
