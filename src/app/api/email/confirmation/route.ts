@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
         Authorization: `Bearer ${resendKey}`,
       },
       body: JSON.stringify({
-        from: "DOAC <tickets@doac.com>",
+        from: process.env.RESEND_FROM_ADDRESS || "DOAC <tickets@steven.com>",
         to: email,
         subject: `Your ticket to ${event_title} — #${ticket_number}`,
         html: htmlContent,
