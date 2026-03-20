@@ -3,6 +3,15 @@ export function generateTicketNumber(): string {
   return String(num).padStart(4, "0");
 }
 
+export function generateMagicToken(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let token = "";
+  for (let i = 0; i < 32; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
 export function generateReferralCode(name: string): string {
   const slug = name.toLowerCase().replace(/[^a-z]/g, "").slice(0, 4);
   const rand = Math.random().toString(36).slice(2, 6);

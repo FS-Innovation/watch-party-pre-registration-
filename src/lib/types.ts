@@ -97,11 +97,12 @@ export const CREW_SEGMENTS: Record<string, { name: string; emoji: string; descri
   },
 };
 
-// V2 registration state (crew matching flow)
+// V2 registration state (pre-registration flow — no crew matching)
 export interface MatchmakingState {
   currentStep: number;
   displayName: string;
   email: string;
+  phone: string;
   city: string;
   timezone: string;
   motivationText: string;
@@ -110,12 +111,12 @@ export interface MatchmakingState {
   aiSegment: string;
   aiTags: Record<string, unknown> | null;
   aiReasoningText: string;
-  crewId: string | null;
-  crewName: string;
-  crewEmoji: string;
   registrationId: string | null;
   ticketNumber: string;
   referralCode: string;
+  magicToken: string;
+  meetGreetWants: boolean | null;
+  meetGreetWhy: string;
   stepEnteredAt: number;
 }
 
@@ -123,6 +124,7 @@ export const INITIAL_MATCHMAKING_STATE: MatchmakingState = {
   currentStep: 1,
   displayName: "",
   email: "",
+  phone: "",
   city: "",
   timezone: "",
   motivationText: "",
@@ -131,12 +133,12 @@ export const INITIAL_MATCHMAKING_STATE: MatchmakingState = {
   aiSegment: "",
   aiTags: null,
   aiReasoningText: "",
-  crewId: null,
-  crewName: "",
-  crewEmoji: "",
   registrationId: null,
   ticketNumber: "",
   referralCode: "",
+  magicToken: "",
+  meetGreetWants: null,
+  meetGreetWhy: "",
   stepEnteredAt: Date.now(),
 };
 

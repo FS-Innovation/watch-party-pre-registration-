@@ -7,8 +7,6 @@ interface Props {
   guestName?: string;
   formattedDate: string;
   question?: string;
-  crewEmoji?: string;
-  crewName?: string;
 }
 
 export default function CinemaTicket({
@@ -16,8 +14,6 @@ export default function CinemaTicket({
   ticketNumber,
   eventTitle,
   formattedDate,
-  crewEmoji,
-  crewName,
 }: Props) {
   return (
     <div className="bg-black border border-white/30 aspect-video relative flex flex-col justify-between p-6 md:p-8">
@@ -64,15 +60,6 @@ export default function CinemaTicket({
             <p className="text-doac-gray text-xs tracking-widest mb-0.5">DATE &amp; TIME</p>
             <p className="text-white text-sm">{formattedDate}</p>
           </div>
-
-          {crewName && (
-            <div>
-              <p className="text-doac-gray text-xs tracking-widest mb-0.5">ROOM</p>
-              <p className="text-white text-sm">
-                {crewEmoji} The {crewName} Room
-              </p>
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -7,71 +7,77 @@ export async function POST(request: NextRequest) {
 
     const {
       event_id,
-      first_name,
+      display_name,
       email,
+      phone,
       city,
       timezone,
-      segment_choice,
+      motivation_text,
       guest_question,
-      ticket_number,
-      referral_code,
-      referred_by,
+      ab_variant,
     } = body;
 
-    if (!first_name || !email) {
+    if (!display_name || !email || !phone) {
       return NextResponse.json(
-        { error: "Name and email are required" },
+        { error: "Name, email, and phone are required" },
         { status: 400 }
       );
     }
+
+    // Generate magic token
+    const magic_token = generateMagicToken();
+
+    // Generate ticket number
+    const ticket_number = String(Math.floor(Math.random() * 9999) + 1).padStart(4, "0");
 
     // Detect device type from user agent
     const ua = request.headers.get("user-agent") || "";
     const device_type = /mobile/i.test(ua) ? "mobile" : /tablet/i.test(ua) ? "tablet" : "desktop";
 
-    const { data, error } = await supabase
+    const { data: registration, error: regError } = await supabase
       .from("registrations")
       .insert({
         event_id,
-        first_name,
+        first_name: display_name,
+        display_name,
         email,
+        phone,
         city: city || "",
         timezone: timezone || "",
         device_type,
-        segment_choice: segment_choice || "",
+        segment_choice: "",
+        motivation_text: motivation_text || "",
         guest_question: guest_question || "",
+        ab_variant: ab_variant || "",
+        ai_segment: "",
         ai_tags: null,
+        ai_reasoning_text: "",
         ticket_number,
-        referral_code,
-        referred_by: referred_by || null,
+        referral_code: "",
+        magic_token,
         commitment_confirmed: false,
-        committed_at: null,
-        ticket_shared: false,
-        calendar_saved: false,
       })
       .select("id")
       .single();
 
-    if (error) {
-      console.error("Registration error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (regError) {
+      console.error("Registration error:", regError);
+      return NextResponse.json({ error: regError.message }, { status: 500 });
     }
 
-    // If referred, update referrals table
-    if (referred_by) {
-      await supabase.from("referrals").insert({
-        referral_code: referred_by,
-        referred_email: email,
-        converted: true,
-      });
+    // AI theme clustering (async, non-blocking)
+    if (motivation_text) {
+      clusterMotivationTheme(registration.id, motivation_text).catch(console.error);
     }
-
-    // Trigger AI tagging of guest question (async, non-blocking)
     if (guest_question) {
-      tagQuestion(data.id, guest_question).catch(console.error);
+      tagQuestion(registration.id, guest_question).catch(console.error);
     }
 
-    return NextResponse.json({ id: data.id, ticket_number });
+    return NextResponse.json({
+      registration_id: registration.id,
+      ticket_number,
+      magic_token,
+    });
   } catch (err) {
     console.error("Registration error:", err);
     return NextResponse.json(
@@ -113,6 +119,65 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
+function generateMagicToken(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
+  let token = "";
+  for (let i = 0; i < 32; i++) {
+    token += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return token;
+}
+
+async function clusterMotivationTheme(registrationId: string, motivationText: string) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return;
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5-20241022",
+        max_tokens: 256,
+        messages: [
+          {
+            role: "user",
+            content: `Analyze this community member's motivation for joining a private screening event. Return a JSON object with:
+- ai_theme: one of ["community", "steven-fan", "btd-superfan", "curiosity", "career-growth", "personal-growth", "creative-inspiration", "connection"]
+- secondary_interests: array of 2-3 interest tags
+- sentiment: one of ["curious", "vulnerable", "ambitious", "reflective", "challenging"]
+- intent_depth: one of ["casual", "moderate", "deep"]
+
+Motivation: "${motivationText}"
+
+Return ONLY the JSON object, no other text.`,
+          },
+        ],
+      }),
+    });
+
+    const data = await response.json();
+    const content = data.content?.[0]?.text;
+    if (!content) return;
+
+    const tags = JSON.parse(content);
+
+    await supabase
+      .from("registrations")
+      .update({
+        ai_tags: tags,
+        ai_segment: tags.ai_theme || "",
+      })
+      .eq("id", registrationId);
+  } catch {
+    // AI clustering is non-critical
+  }
+}
+
 async function tagQuestion(registrationId: string, question: string) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return;
@@ -131,10 +196,11 @@ async function tagQuestion(registrationId: string, question: string) {
         messages: [
           {
             role: "user",
-            content: `Analyze this audience question and return a JSON object with these fields:
+            content: `Analyze this audience question for a screening event and return a JSON object with:
 - topic_tags: array of 2-3 relevant topic tags
 - curiosity_cluster: one of ["personal-growth", "business", "relationships", "health", "creativity", "philosophy", "career", "other"]
 - sentiment: one of ["curious", "vulnerable", "ambitious", "reflective", "challenging"]
+- quality_score: 1-5 (uniqueness and depth)
 
 Question: "${question}"
 
@@ -150,10 +216,15 @@ Return ONLY the JSON object, no other text.`,
 
     const tags = JSON.parse(content);
 
-    await supabase
-      .from("registrations")
-      .update({ ai_tags: tags })
-      .eq("id", registrationId);
+    // Store in signal_responses for the question
+    await supabase.from("signal_responses").insert({
+      registration_id: registrationId,
+      question_key: "ask_steven",
+      answer_text: question,
+      ai_tags: tags,
+      segment_tag: tags.curiosity_cluster || "",
+      confidence_score: tags.quality_score || null,
+    });
   } catch {
     // AI tagging is non-critical
   }
