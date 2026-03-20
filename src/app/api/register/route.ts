@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/supabase";
+import { sendSMS } from "@/lib/twilio";
 
 // Allowed fields for PATCH updates (lockdown)
 const ALLOWED_PATCH_FIELDS = new Set([
@@ -120,6 +121,11 @@ export async function POST(request: NextRequest) {
     }
     if (clean.guest_question) {
       tagQuestion(registration.id, clean.guest_question).catch(console.error);
+    }
+
+    // Send registration confirmation SMS (async, non-blocking)
+    if (clean.phone) {
+      sendRegistrationConfirmationSMS(clean.phone, clean.display_name).catch(console.error);
     }
 
     return NextResponse.json({
@@ -295,4 +301,13 @@ Return ONLY the JSON object, no other text.`,
   } catch {
     // AI tagging is non-critical
   }
+}
+
+async function sendRegistrationConfirmationSMS(phone: string, name: string) {
+  const message =
+    `Hey ${name} — you're registered for the screening. ` +
+    `We'll text you a private link before it starts. ` +
+    `Keep this number saved.`;
+
+  await sendSMS(phone, message);
 }

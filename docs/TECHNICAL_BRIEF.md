@@ -44,9 +44,12 @@ Both share the same Supabase project (Pro tier) and the same user identity. A pe
 - `poll_questions` / `poll_responses` — live polls during screening
 - `conversation_cards` — icebreaker responses (opt-in, named/anonymous)
 - `photobooth_entries` — virtual step-and-repeat captures
-- `attendance_signals` — join/leave timestamps, camera-on tracking
-- `chat_messages` — moderated community chat (with AI filtering)
+- `attendance_signals` — join/leave timestamps, web app engagement tracking
+- `live_questions` — real-time Ask Steven questions during screening (separate from pre-reg `signal_responses`)
 - `admin_events` — admin actions log (stage invites, video start/stop)
+
+**Excluded from v1:**
+- ~~`chat_messages`~~ — No open chat in v1. Structured features (polls, cards, Ask Steven) give better signal data with zero moderation risk. V2 candidate: emoji reactions (no text chat).
 
 All tables link back to `registrations.id` — one person, one identity, full signal history.
 
@@ -293,33 +296,50 @@ The magic token is **permanent and device-independent** — it works on any devi
 ### Core Features (Priority Order)
 
 1. **Authenticated entry** — magic link → welcome screen with their name + ticket
-2. **Live polls** — admin pushes poll questions, results update in real-time via Supabase Realtime
+2. **Live polls** — admin pushes poll questions, results update in real-time via Supabase Realtime (broadcast pattern)
 3. **Conversation cards** — 2 icebreaker questions, opt-in, choose named or anonymous
-4. **Virtual photobooth / step-and-repeat** — capture + share moment
-5. **Moderated chat** — AI-filtered, rate-limited, with admin controls
-6. **Admin dashboard** — live signal metrics, poll management, stage invite controls
+4. **Ask Steven (live)** — real-time question submission during screening, AI-filtered, moderator queue, separate from pre-reg questions
+5. **Virtual photobooth / step-and-repeat** — capture + share moment
+6. **Admin dashboard** — live signal metrics, poll management, question queue, stage invite controls
 7. **AI signal engine** — real-time clustering of community sentiment + question themes
+
+**Not in v1:** Open text chat. V2 candidate: emoji reactions (no text chat).
 
 ### Signal Tracking (Mapped to PRD)
 
 | Signal Category | What We Track | Table |
 |----------------|---------------|-------|
-| **Format signals** | Camera-on rate, web app scan rate, drop-off timing, experience polls | `attendance_signals`, `poll_responses` |
+| **Format signals** | Web app engagement rate, join/leave timing, interaction count, experience polls | `attendance_signals`, `poll_responses` |
 | **Community signals** | Conversation card participation, photobooth usage, community platform interest | `conversation_cards`, `photobooth_entries`, `poll_responses` |
-| **Meet & greet signals** | Pre-reg intent (built ✅), poll completion rate | `meet_greet_intent`, `poll_responses` |
+| **Meet & greet signals** | Pre-reg intent (built), poll completion rate | `meet_greet_intent`, `poll_responses` |
+| **Camera-on rate** | Manually observed at 3 key moments (start, midpoint, pre-Q&A) — not auto-tracked | Manual log (Zoom Webinar doesn't expose attendee camera state via API) |
+
+### Decisions Resolved
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| 1 | SMS Provider | **Twilio** — built and integrated. Confirmation SMS on registration, magic link SMS before event. |
+| 2 | Table naming | **Keep `registrations`** — all new tables use `registration_id` as FK. |
+| 3 | Chat in v1? | **No.** Structured features only. Emoji reactions as v2 candidate. |
+| 4 | Camera-on tracking | **Manual observation** at 3 moments + web app engagement as primary quantitative metric. |
+| 5 | Realtime limits | **Pending** — need watch party PRD to finalize broadcast pattern + polling fallback design. |
+| 6 | Pre-event vs live questions | **Pending** — need PRD for Ask Steven live flow, moderator view, and question routing. |
 
 ---
 
-## 6. Timeline
+## 7. Timeline
 
 | Phase | What | When |
 |-------|------|------|
 | ✅ Pre-registration flow | Registration, motivation, question, commitment, envelope, meet-greet | Done |
 | ✅ Backend hardening | Rate limiting, validation, indexes, auth, cleanup | Done |
+| ✅ Twilio SMS integration | Confirmation SMS on registration + magic link send endpoint | Done |
+| ✅ Schema cleanup | Removed crew matching, tightened RLS | Done |
 | 🔲 Supabase config | Run migration, enable pooling, set env vars | Sam — this week |
+| 🔲 Twilio setup | Create account, buy number, add env vars | Sam — this week |
 | 🔲 Load testing | Hire freelancer or run k6 scripts | 1-2 weeks |
-| 🔲 Watch party web app | Magic link auth, polls, cards, photobooth, chat, admin | Next phase |
-| 🔲 Twilio SMS integration | Magic link delivery via Twilio (~$9 per 1k users) | Before Event 1 |
+| 🔲 Watch party PRD | Sam finalizing — covers all screens, interactions, realtime needs | In progress |
+| 🔲 Watch party web app | Magic link auth, polls, cards, Ask Steven, photobooth, admin | After PRD |
 
 ---
 
