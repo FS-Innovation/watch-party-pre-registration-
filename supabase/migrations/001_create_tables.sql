@@ -61,8 +61,7 @@ CREATE POLICY "Allow public inserts" ON registrations
 CREATE POLICY "Allow public reads for count" ON registrations
   FOR SELECT TO anon USING (true);
 
-CREATE POLICY "Allow public updates" ON registrations
-  FOR UPDATE TO anon USING (true);
+-- Note: public UPDATE removed — API routes use service_role key for updates
 
 CREATE POLICY "Allow public inserts" ON referrals
   FOR INSERT TO anon WITH CHECK (true);

@@ -29,7 +29,7 @@ Both share the same Supabase project (Pro tier) and the same user identity. A pe
 | **Zoom** | Video infrastructure for the screening | Business |
 | **Anthropic Claude API** | AI clustering, sentiment analysis, question tagging | Pay-per-use |
 | **Resend** | Transactional email (ticket confirmations) | Free tier likely sufficient |
-| **SMS provider** (TBD) | Magic link delivery before events | TBD |
+| **Twilio** | SMS magic link delivery before events | Pay-per-use (~$0.0079/SMS) |
 
 ### Database Schema (Single Supabase Project)
 
@@ -44,9 +44,12 @@ Both share the same Supabase project (Pro tier) and the same user identity. A pe
 - `poll_questions` / `poll_responses` — live polls during screening
 - `conversation_cards` — icebreaker responses (opt-in, named/anonymous)
 - `photobooth_entries` — virtual step-and-repeat captures
-- `attendance_signals` — join/leave timestamps, camera-on tracking
-- `chat_messages` — moderated community chat (with AI filtering)
+- `attendance_signals` — join/leave timestamps, web app engagement tracking
+- `live_questions` — real-time Ask Steven questions during screening (separate from pre-reg `signal_responses`)
 - `admin_events` — admin actions log (stage invites, video start/stop)
+
+**Excluded from v1:**
+- ~~`chat_messages`~~ — No open chat in v1. Structured features (polls, cards, Ask Steven) give better signal data with zero moderation risk. V2 candidate: emoji reactions (no text chat).
 
 All tables link back to `registrations.id` — one person, one identity, full signal history.
 
@@ -154,6 +157,9 @@ In your deployment platform (Vercel, etc.), add:
 | `ADMIN_SECRET` | You create this — any strong random string | Protects the admin endpoint |
 | `ANTHROPIC_API_KEY` | Anthropic Console | AI clustering (optional, degrades gracefully) |
 | `RESEND_API_KEY` | Resend dashboard | Email confirmations (optional) |
+| `TWILIO_ACCOUNT_SID` | Twilio Console → Account Info | Twilio account identifier |
+| `TWILIO_AUTH_TOKEN` | Twilio Console → Account Info | Twilio API auth |
+| `TWILIO_PHONE_NUMBER` | Twilio Console → Phone Numbers | The number SMS is sent from |
 
 ### D. Tighten RLS Policies (Optional, After Service Key Is Working)
 
@@ -233,44 +239,107 @@ Platforms: Upwork, Toptal, or Arc.dev — search for "performance engineer" or "
 
 ---
 
-## 5. What's Next: Watch Party Web App
+## 5. SMS Magic Links (Twilio)
 
-### Magic Link Auth Flow
-1. Registered user receives SMS with `watchparty.steven.com/?token=ABC123`
-2. Web app looks up `magic_token` in `registrations` table
-3. If valid → user is authenticated, all interactions linked to their `registration_id`
-4. If invalid → "This link isn't valid" error page
+### Why SMS (Not Just Email)
+
+SMS magic links are the bridge between pre-registration and the live watch party. They matter for three reasons:
+
+1. **Guaranteed delivery** — SMS open rates are 98% vs ~20% for email. On screening night, you need people to actually open the link. An email sitting in a Promotions tab means an empty room.
+
+2. **Phone number = verified identity** — Every interaction during the watch party (polls, conversation cards, meet-greet votes) traces back to a real phone number. This gives you clean, deduplicated signal data. No burner emails, no duplicates. When you report "847 people voted yes on the community platform poll," that's 847 verified humans.
+
+3. **Direct channel for future events** — An SMS list of people who actually showed up and engaged is the most valuable asset this project produces. You own the relationship. No algorithm, no feed, no spam folder between you and your audience.
+
+### How It Works
+
+1. Before the event, admin triggers SMS blast via `/api/sms/send-magic-links`
+2. Twilio sends each registered user: `"Your screening starts soon. Tap to enter: https://watchparty.btd.com/?token=ABC123"`
+3. User taps the link on their phone → web app looks up `magic_token` in `registrations` table
+4. If valid → user is authenticated, all interactions linked to their `registration_id`
+5. If invalid/expired → "This link isn't valid" error page
+
+The magic token is **permanent and device-independent** — it works on any device, any browser, as many times as they want. If someone opens the link on their phone, then later switches to their laptop, it still works. It's tied to their registration, not their device. Think of it like a concert ticket QR code — scan it wherever, it's still your ticket.
+
+### Twilio Cost Breakdown
+
+| Audience Size | SMS Cost (US) | Twilio Phone # | Total Per Event |
+|--------------|---------------|----------------|-----------------|
+| **1,000** | $7.90 | $1.15/mo | ~$9 |
+| **2,000** | $15.80 | $1.15/mo | ~$17 |
+| **3,000** | $23.70 | $1.15/mo | ~$25 |
+| **4,000** | $31.60 | $1.15/mo | ~$33 |
+| **5,000** | $39.50 | $1.15/mo | ~$41 |
+
+**Pricing notes:**
+- US outbound SMS: $0.0079 per message
+- Twilio phone number: $1.15/month (local US number)
+- No monthly minimum, no contracts — pure pay-per-use
+- International SMS costs more (~$0.05–$0.15 depending on country)
+- If you send a reminder SMS too (e.g., 1 hour before), double the SMS cost
+
+**Optional add-ons:**
+- Toll-free number ($2/mo) — better deliverability, looks more professional
+- A2P 10DLC registration ($15 one-time + $0.003/msg) — required for high-volume US SMS, improves delivery rates. Twilio will prompt you if needed.
+
+### Twilio Setup
+
+1. Sign up at [twilio.com](https://www.twilio.com)
+2. Get a phone number (Console → Phone Numbers → Buy a Number)
+3. Copy Account SID, Auth Token, and Phone Number
+4. Add to env vars: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+
+---
+
+## 6. What's Next: Watch Party Web App
 
 ### Core Features (Priority Order)
 
 1. **Authenticated entry** — magic link → welcome screen with their name + ticket
-2. **Live polls** — admin pushes poll questions, results update in real-time via Supabase Realtime
+2. **Live polls** — admin pushes poll questions, results update in real-time via Supabase Realtime (broadcast pattern)
 3. **Conversation cards** — 2 icebreaker questions, opt-in, choose named or anonymous
-4. **Virtual photobooth / step-and-repeat** — capture + share moment
-5. **Moderated chat** — AI-filtered, rate-limited, with admin controls
-6. **Admin dashboard** — live signal metrics, poll management, stage invite controls
+4. **Ask Steven (live)** — real-time question submission during screening, AI-filtered, moderator queue, separate from pre-reg questions
+5. **Virtual photobooth / step-and-repeat** — capture + share moment
+6. **Admin dashboard** — live signal metrics, poll management, question queue, stage invite controls
 7. **AI signal engine** — real-time clustering of community sentiment + question themes
+
+**Not in v1:** Open text chat. V2 candidate: emoji reactions (no text chat).
 
 ### Signal Tracking (Mapped to PRD)
 
 | Signal Category | What We Track | Table |
 |----------------|---------------|-------|
-| **Format signals** | Camera-on rate, web app scan rate, drop-off timing, experience polls | `attendance_signals`, `poll_responses` |
+| **Format signals** | Web app engagement rate, join/leave timing, interaction count, experience polls | `attendance_signals`, `poll_responses` |
 | **Community signals** | Conversation card participation, photobooth usage, community platform interest | `conversation_cards`, `photobooth_entries`, `poll_responses` |
-| **Meet & greet signals** | Pre-reg intent (built ✅), poll completion rate | `meet_greet_intent`, `poll_responses` |
+| **Meet & greet signals** | Pre-reg intent (built), poll completion rate | `meet_greet_intent`, `poll_responses` |
+| **Camera-on rate** | Manually observed at 3 key moments (start, midpoint, pre-Q&A) — not auto-tracked | Manual log (Zoom Webinar doesn't expose attendee camera state via API) |
+
+### Decisions Resolved
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| 1 | SMS Provider | **Twilio** — built and integrated. Confirmation SMS on registration, magic link SMS before event. |
+| 2 | Table naming | **Keep `registrations`** — all new tables use `registration_id` as FK. |
+| 3 | Chat in v1? | **No.** Structured features only. Emoji reactions as v2 candidate. |
+| 4 | Camera-on tracking | **Manual observation** at 3 moments + web app engagement as primary quantitative metric. |
+| 5 | Realtime limits | **Pending** — need watch party PRD to finalize broadcast pattern + polling fallback design. |
+| 6 | Pre-event vs live questions | **Pending** — need PRD for Ask Steven live flow, moderator view, and question routing. |
 
 ---
 
-## 6. Timeline
+## 7. Timeline
 
 | Phase | What | When |
 |-------|------|------|
 | ✅ Pre-registration flow | Registration, motivation, question, commitment, envelope, meet-greet | Done |
 | ✅ Backend hardening | Rate limiting, validation, indexes, auth, cleanup | Done |
+| ✅ Twilio SMS integration | Confirmation SMS on registration + magic link send endpoint | Done |
+| ✅ Schema cleanup | Removed crew matching, tightened RLS | Done |
 | 🔲 Supabase config | Run migration, enable pooling, set env vars | Sam — this week |
+| 🔲 Twilio setup | Create account, buy number, add env vars | Sam — this week |
 | 🔲 Load testing | Hire freelancer or run k6 scripts | 1-2 weeks |
-| 🔲 Watch party web app | Magic link auth, polls, cards, photobooth, chat, admin | Next phase |
-| 🔲 SMS integration | Magic link delivery to registered users | Before Event 1 |
+| 🔲 Watch party PRD | Sam finalizing — covers all screens, interactions, realtime needs | In progress |
+| 🔲 Watch party web app | Magic link auth, polls, cards, Ask Steven, photobooth, admin | After PRD |
 
 ---
 

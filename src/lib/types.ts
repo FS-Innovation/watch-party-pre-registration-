@@ -21,35 +21,7 @@ export interface Registration {
   ab_variant: string;
   ai_segment: string;
   ai_reasoning_text: string;
-  crew_id: string | null;
-  crew_accepted: boolean;
-  switched_crew: boolean;
-  switched_to_crew_id: string | null;
   created_at?: string;
-}
-
-export interface Crew {
-  id: string;
-  event_id: string;
-  name: string;
-  emoji: string;
-  primary_segment: string;
-  status: "forming" | "open" | "merged" | "closed";
-  min_threshold: number;
-  max_capacity: number;
-  current_count: number;
-  merged_into_crew_id: string | null;
-  created_at?: string;
-}
-
-export interface CuriosityHeatmapEntry {
-  id: string;
-  event_id: string;
-  topic_cluster: string;
-  question_count: number;
-  percentage: number;
-  sample_questions: string[];
-  generated_at: string;
 }
 
 export interface Referral {
@@ -73,31 +45,7 @@ export interface ScreeningEvent {
   postcard_video_url: string;
 }
 
-// Crew segment mapping
-export const CREW_SEGMENTS: Record<string, { name: string; emoji: string; description: string }> = {
-  "meaning-seeker": {
-    name: "Reflection",
-    emoji: "\u{1F30A}",
-    description: "People drawn to depth, meaning, and sitting with the big questions.",
-  },
-  builder: {
-    name: "Builders",
-    emoji: "\u{1F6E0}\u{FE0F}",
-    description: "People building something and looking for fuel, strategy, and founder energy.",
-  },
-  creative: {
-    name: "Creative Lab",
-    emoji: "\u{2728}",
-    description: "People drawn to the craft behind the content — storytelling, production, ideas.",
-  },
-  connector: {
-    name: "Connection",
-    emoji: "\u{1F91D}",
-    description: "People who value meaningful relationships and bringing people together.",
-  },
-};
-
-// V2 registration state (pre-registration flow — no crew matching)
+// Pre-registration flow state
 export interface MatchmakingState {
   currentStep: number;
   displayName: string;
