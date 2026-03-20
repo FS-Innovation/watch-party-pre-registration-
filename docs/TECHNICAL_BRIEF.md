@@ -29,7 +29,7 @@ Both share the same Supabase project (Pro tier) and the same user identity. A pe
 | **Zoom** | Video infrastructure for the screening | Business |
 | **Anthropic Claude API** | AI clustering, sentiment analysis, question tagging | Pay-per-use |
 | **Resend** | Transactional email (ticket confirmations) | Free tier likely sufficient |
-| **SMS provider** (TBD) | Magic link delivery before events | TBD |
+| **Twilio** | SMS magic link delivery before events | Pay-per-use (~$0.0079/SMS) |
 
 ### Database Schema (Single Supabase Project)
 
@@ -154,6 +154,9 @@ In your deployment platform (Vercel, etc.), add:
 | `ADMIN_SECRET` | You create this — any strong random string | Protects the admin endpoint |
 | `ANTHROPIC_API_KEY` | Anthropic Console | AI clustering (optional, degrades gracefully) |
 | `RESEND_API_KEY` | Resend dashboard | Email confirmations (optional) |
+| `TWILIO_ACCOUNT_SID` | Twilio Console → Account Info | Twilio account identifier |
+| `TWILIO_AUTH_TOKEN` | Twilio Console → Account Info | Twilio API auth |
+| `TWILIO_PHONE_NUMBER` | Twilio Console → Phone Numbers | The number SMS is sent from |
 
 ### D. Tighten RLS Policies (Optional, After Service Key Is Working)
 
@@ -233,13 +236,59 @@ Platforms: Upwork, Toptal, or Arc.dev — search for "performance engineer" or "
 
 ---
 
-## 5. What's Next: Watch Party Web App
+## 5. SMS Magic Links (Twilio)
 
-### Magic Link Auth Flow
-1. Registered user receives SMS with `watchparty.steven.com/?token=ABC123`
-2. Web app looks up `magic_token` in `registrations` table
-3. If valid → user is authenticated, all interactions linked to their `registration_id`
-4. If invalid → "This link isn't valid" error page
+### Why SMS (Not Just Email)
+
+SMS magic links are the bridge between pre-registration and the live watch party. They matter for three reasons:
+
+1. **Guaranteed delivery** — SMS open rates are 98% vs ~20% for email. On screening night, you need people to actually open the link. An email sitting in a Promotions tab means an empty room.
+
+2. **Phone number = verified identity** — Every interaction during the watch party (polls, conversation cards, meet-greet votes) traces back to a real phone number. This gives you clean, deduplicated signal data. No burner emails, no duplicates. When you report "847 people voted yes on the community platform poll," that's 847 verified humans.
+
+3. **Direct channel for future events** — An SMS list of people who actually showed up and engaged is the most valuable asset this project produces. You own the relationship. No algorithm, no feed, no spam folder between you and your audience.
+
+### How It Works
+
+1. Before the event, admin triggers SMS blast via `/api/sms/send-magic-links`
+2. Twilio sends each registered user: `"Your screening starts soon. Tap to enter: https://watchparty.btd.com/?token=ABC123"`
+3. User taps the link on their phone → web app looks up `magic_token` in `registrations` table
+4. If valid → user is authenticated, all interactions linked to their `registration_id`
+5. If invalid/expired → "This link isn't valid" error page
+
+The magic token is **permanent and device-independent** — it works on any device, any browser, as many times as they want. If someone opens the link on their phone, then later switches to their laptop, it still works. It's tied to their registration, not their device. Think of it like a concert ticket QR code — scan it wherever, it's still your ticket.
+
+### Twilio Cost Breakdown
+
+| Audience Size | SMS Cost (US) | Twilio Phone # | Total Per Event |
+|--------------|---------------|----------------|-----------------|
+| **1,000** | $7.90 | $1.15/mo | ~$9 |
+| **2,000** | $15.80 | $1.15/mo | ~$17 |
+| **3,000** | $23.70 | $1.15/mo | ~$25 |
+| **4,000** | $31.60 | $1.15/mo | ~$33 |
+| **5,000** | $39.50 | $1.15/mo | ~$41 |
+
+**Pricing notes:**
+- US outbound SMS: $0.0079 per message
+- Twilio phone number: $1.15/month (local US number)
+- No monthly minimum, no contracts — pure pay-per-use
+- International SMS costs more (~$0.05–$0.15 depending on country)
+- If you send a reminder SMS too (e.g., 1 hour before), double the SMS cost
+
+**Optional add-ons:**
+- Toll-free number ($2/mo) — better deliverability, looks more professional
+- A2P 10DLC registration ($15 one-time + $0.003/msg) — required for high-volume US SMS, improves delivery rates. Twilio will prompt you if needed.
+
+### Twilio Setup
+
+1. Sign up at [twilio.com](https://www.twilio.com)
+2. Get a phone number (Console → Phone Numbers → Buy a Number)
+3. Copy Account SID, Auth Token, and Phone Number
+4. Add to env vars: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
+
+---
+
+## 6. What's Next: Watch Party Web App
 
 ### Core Features (Priority Order)
 
@@ -270,7 +319,7 @@ Platforms: Upwork, Toptal, or Arc.dev — search for "performance engineer" or "
 | 🔲 Supabase config | Run migration, enable pooling, set env vars | Sam — this week |
 | 🔲 Load testing | Hire freelancer or run k6 scripts | 1-2 weeks |
 | 🔲 Watch party web app | Magic link auth, polls, cards, photobooth, chat, admin | Next phase |
-| 🔲 SMS integration | Magic link delivery to registered users | Before Event 1 |
+| 🔲 Twilio SMS integration | Magic link delivery via Twilio (~$9 per 1k users) | Before Event 1 |
 
 ---
 
