@@ -8,12 +8,13 @@ import { trackEvent } from "@/lib/analytics";
 interface Props {
   screeningDate: string;
   screeningTime: string;
-  onNext: (data: { displayName: string; email: string; city: string; timezone: string }) => void;
+  onNext: (data: { displayName: string; email: string; phone: string; city: string; timezone: string }) => void;
 }
 
 export default function Step1FindYourPeople({ screeningDate, screeningTime, onNext }: Props) {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
   const [timezone, setTimezone] = useState("");
   const [cityDetected, setCityDetected] = useState(false);
@@ -58,22 +59,28 @@ export default function Step1FindYourPeople({ screeningDate, screeningTime, onNe
   const handleSubmit = () => {
     setError("");
     if (!displayName.trim()) {
-      setError("We need a name to find your crew.");
+      setError("We need your name to get you in.");
       return;
     }
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError("Please enter a valid email address.");
       return;
     }
+    if (!phone.trim() || !/^[+]?[\d\s\-().]{7,}$/.test(phone.trim())) {
+      setError("Please enter a valid phone number.");
+      return;
+    }
 
     trackEvent("name_submitted", {
       display_name: displayName.trim(),
       has_city: !!city.trim(),
+      has_phone: true,
     });
 
     onNext({
       displayName: displayName.trim(),
       email: email.trim(),
+      phone: phone.trim(),
       city: city.trim(),
       timezone,
     });
@@ -106,7 +113,7 @@ export default function Step1FindYourPeople({ screeningDate, screeningTime, onNe
           transition={{ duration: 0.8, delay: 0.2 }}
           className="font-serif text-4xl md:text-5xl text-white mb-6"
         >
-          Find Your People
+          You&apos;re Invited
         </motion.h1>
 
         {/* Subtext */}
@@ -116,9 +123,7 @@ export default function Step1FindYourPeople({ screeningDate, screeningTime, onNe
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-doac-gray text-base leading-relaxed mb-14 max-w-sm mx-auto"
         >
-          3 quick questions and we&apos;ll seat you with people on your
-          wavelength. You&apos;ll watch together, chat together, and actually
-          connect.
+          A few quick details and you&apos;re in.
         </motion.p>
 
         {/* Form */}
@@ -152,7 +157,22 @@ export default function Step1FindYourPeople({ screeningDate, screeningTime, onNe
             className="input-underline text-center"
             autoComplete="email"
             onKeyDown={(e) => {
-              if (e.key === "Enter" && displayName.trim() && email.trim()) handleSubmit();
+              if (e.key === "Enter") {
+                const phoneInput = document.querySelector('input[type="tel"]') as HTMLInputElement;
+                phoneInput?.focus();
+              }
+            }}
+          />
+
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="Your phone number"
+            className="input-underline text-center"
+            autoComplete="tel"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && displayName.trim() && email.trim() && phone.trim()) handleSubmit();
             }}
           />
 
@@ -168,7 +188,7 @@ export default function Step1FindYourPeople({ screeningDate, screeningTime, onNe
               className="input-underline text-center"
               autoComplete="address-level2"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && displayName.trim() && email.trim()) handleSubmit();
+                if (e.key === "Enter" && displayName.trim() && email.trim() && phone.trim()) handleSubmit();
               }}
             />
             {cityDetected && (
@@ -186,7 +206,7 @@ export default function Step1FindYourPeople({ screeningDate, screeningTime, onNe
             onClick={handleSubmit}
             className="w-full bg-doac-red text-white py-4 text-lg tracking-wide hover:opacity-90 transition-opacity mt-4"
           >
-            Find my crew
+            I&apos;m in
           </button>
         </motion.div>
       </div>

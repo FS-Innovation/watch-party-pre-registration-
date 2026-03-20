@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { DEMO_EVENT, INITIAL_MATCHMAKING_STATE, MatchmakingState } from "@/lib/types";
 import { initAnalytics, trackEvent, trackPage, getUTMParams } from "@/lib/analytics";
 import { generateTicketNumber, generateReferralCode } from "@/lib/utils";
@@ -8,24 +8,23 @@ import ScreenTransition from "@/components/ScreenTransition";
 import Step1FindYourPeople from "@/components/matchmaking/Step1FindYourPeople";
 import Step2Motivation from "@/components/matchmaking/Step2Motivation";
 import Step3Question from "@/components/matchmaking/Step3Question";
-import Step4FindingCrew from "@/components/matchmaking/Step4FindingCrew";
 import Step5CrewReveal from "@/components/matchmaking/Step5CrewReveal";
 import Step7Envelope from "@/components/matchmaking/Step7Envelope";
+import Step9MeetAndGreet from "@/components/matchmaking/Step9MeetAndGreet";
+import { useEffect } from "react";
 
 const event = DEMO_EVENT;
 
-// Flow:
-// 1. Find Your People (name, email, city)
+// Flow (v2 — no crew matching):
+// 1. Registration (name, email, phone, city)
 // 2. What brings you here tonight? (open text)
 // 3. Question for Steven (A/B tested)
-// 4. Finding your crew... (loading + AI matching)
-// 5. Crew Reveal → Commitment (merged: badge flashes → commitment text → "I'll be there")
-// 6. The Envelope (sealed → ticket → share → Steven video postcard)
+// 4. Commitment ("This screening happens once...")
+// 5. The Envelope (sealed → ticket → share → Steven video postcard)
+// 6. Meet and Greet intent (new)
 
 export default function RegisterPage() {
   const [state, setState] = useState<MatchmakingState>(INITIAL_MATCHMAKING_STATE);
-  const crewMatchPromise = useRef<Promise<Record<string, unknown>> | null>(null);
-  const crewMatchResult = useRef<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     initAnalytics();
@@ -45,7 +44,7 @@ export default function RegisterPage() {
 
   // Step 1 → 2: Identity captured
   const handleStep1Complete = useCallback(
-    (data: { displayName: string; email: string; city: string; timezone: string }) => {
+    (data: { displayName: string; email: string; phone: string; city: string; timezone: string }) => {
       setState((prev) => ({ ...prev, ...data }));
       goToStep(2);
     },
@@ -61,19 +60,20 @@ export default function RegisterPage() {
     [goToStep]
   );
 
-  // Step 3 → 4: Question submitted, start crew matching
+  // Step 3 → 4: Question submitted, register user
   const handleStep3Complete = useCallback(
     (guestQuestion: string) => {
       setState((prev) => ({ ...prev, guestQuestion }));
 
-      // Fire the crew matching API call NOW (runs in parallel with the loading screen)
-      crewMatchPromise.current = fetch("/api/crew/match", {
+      // Register the user via API (no crew matching)
+      fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           event_id: event.id,
           display_name: state.displayName,
           email: state.email,
+          phone: state.phone,
           city: state.city,
           timezone: state.timezone,
           motivation_text: state.motivationText,
@@ -83,56 +83,30 @@ export default function RegisterPage() {
       })
         .then((r) => r.json())
         .then((result) => {
-          crewMatchResult.current = result;
-          return result;
+          setState((prev) => ({
+            ...prev,
+            registrationId: result.registration_id || null,
+            ticketNumber: result.ticket_number || generateTicketNumber(),
+            referralCode: generateReferralCode(prev.displayName),
+            magicToken: result.magic_token || "",
+          }));
         })
         .catch((err) => {
-          console.error("Crew match error:", err);
-          const fallback = {
-            registration_id: null,
-            crew_id: "fallback",
-            crew_name: "Connection",
-            crew_emoji: "\u{1F91D}",
-            ai_segment: "connector",
-            ai_reasoning: "",
-            ticket_number: generateTicketNumber(),
-          };
-          crewMatchResult.current = fallback;
-          return fallback;
+          console.error("Registration error:", err);
+          setState((prev) => ({
+            ...prev,
+            ticketNumber: generateTicketNumber(),
+            referralCode: generateReferralCode(prev.displayName),
+          }));
         });
 
+      // Move to commitment screen immediately (registration is non-blocking)
       goToStep(4);
     },
     [state, goToStep]
   );
 
-  // Step 4 → 5: Loading complete, reveal crew + commitment
-  const handleStep4Complete = useCallback(async () => {
-    if (!crewMatchResult.current && crewMatchPromise.current) {
-      await crewMatchPromise.current;
-    }
-
-    const result = crewMatchResult.current;
-    if (result) {
-      const ticketNum = String(result.ticket_number || generateTicketNumber());
-      setState((prev) => ({
-        ...prev,
-        registrationId: (result.registration_id as string) || null,
-        crewId: (result.crew_id as string) || null,
-        crewName: (result.crew_name as string) || "Connection",
-        crewEmoji: (result.crew_emoji as string) || "\u{1F91D}",
-        aiSegment: (result.ai_segment as string) || "connector",
-        aiReasoningText: (result.ai_reasoning as string) || "",
-        aiTags: (result.ai_tags as Record<string, unknown>) || null,
-        ticketNumber: ticketNum,
-        referralCode: generateReferralCode(prev.displayName),
-      }));
-    }
-
-    goToStep(5);
-  }, [goToStep]);
-
-  // Step 5 → 6: Commitment confirmed → Envelope
+  // Step 4 → 5: Commitment confirmed → Envelope
   const handleCommitmentConfirmed = useCallback(async () => {
     if (state.registrationId) {
       try {
@@ -148,8 +122,35 @@ export default function RegisterPage() {
         // Non-blocking
       }
     }
-    goToStep(6);
+    goToStep(5);
   }, [state.registrationId, goToStep]);
+
+  // Step 6: Meet and greet complete
+  const handleMeetGreetComplete = useCallback(
+    async (wants: boolean, why: string) => {
+      setState((prev) => ({ ...prev, meetGreetWants: wants, meetGreetWhy: why }));
+
+      // Submit meet-and-greet intent to API
+      if (state.registrationId) {
+        try {
+          await fetch("/api/meet-greet", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              registration_id: state.registrationId,
+              wants_consideration: wants,
+              why_answer: why || null,
+            }),
+          });
+        } catch {
+          // Non-blocking
+        }
+      }
+
+      // Flow complete — stay on the confirmation screen
+    },
+    [state.registrationId]
+  );
 
   return (
     <main className="bg-black min-h-screen">
@@ -175,23 +176,20 @@ export default function RegisterPage() {
           />
         )}
         {state.currentStep === 4 && (
-          <Step4FindingCrew
-            onComplete={handleStep4Complete}
-            minimumDelay={4000}
-          />
-        )}
-        {state.currentStep === 5 && (
           <Step5CrewReveal
-            crewName={state.crewName}
-            crewEmoji={state.crewEmoji}
-            crewId={state.crewId || ""}
-            aiSegment={state.aiSegment}
             displayName={state.displayName}
             onCommit={handleCommitmentConfirmed}
           />
         )}
+        {state.currentStep === 5 && (
+          <Step7Envelope event={event} state={state} onNext={() => goToStep(6)} />
+        )}
         {state.currentStep === 6 && (
-          <Step7Envelope event={event} state={state} />
+          <Step9MeetAndGreet
+            displayName={state.displayName}
+            registrationId={state.registrationId}
+            onComplete={handleMeetGreetComplete}
+          />
         )}
       </ScreenTransition>
     </main>

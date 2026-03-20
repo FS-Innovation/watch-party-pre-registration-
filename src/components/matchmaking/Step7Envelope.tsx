@@ -10,13 +10,14 @@ import CinemaTicket from "@/components/CinemaTicket";
 interface Props {
   event: ScreeningEvent;
   state: MatchmakingState;
+  onNext?: () => void;
 }
 
 type Phase = "sealed" | "flap-opening" | "pull" | "revealed";
 
 const PULL_THRESHOLD = -160;
 
-export default function Step7Envelope({ event, state }: Props) {
+export default function Step7Envelope({ event, state, onNext }: Props) {
   const [phase, setPhase] = useState<Phase>("sealed");
   const [videoEnded, setVideoEnded] = useState(false);
 
@@ -234,9 +235,6 @@ export default function Step7Envelope({ event, state }: Props) {
                 eventTitle={event.title}
                 guestName={event.guest_name}
                 formattedDate={formattedDate}
-                question={state.guestQuestion}
-                crewEmoji={state.crewEmoji}
-                crewName={state.crewName}
               />
             </motion.div>
 
@@ -320,6 +318,23 @@ export default function Step7Envelope({ event, state }: Props) {
                 <button onClick={() => handleShare("whatsapp")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">WhatsApp</button>
               </div>
             </motion.div>
+
+            {/* Continue to meet and greet */}
+            {onNext && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: videoEnded ? 1 : 0 }}
+                transition={{ delay: 0.5, duration: 0.8 }}
+                className="mt-8 text-center"
+              >
+                <button
+                  onClick={onNext}
+                  className="text-doac-gray text-sm hover:text-white transition-colors underline underline-offset-4"
+                >
+                  Continue
+                </button>
+              </motion.div>
+            )}
           </motion.div>
         </div>
       )}
