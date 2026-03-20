@@ -8,7 +8,7 @@ import ScreenTransition from "@/components/ScreenTransition";
 import Step1FindYourPeople from "@/components/matchmaking/Step1FindYourPeople";
 import Step2Motivation from "@/components/matchmaking/Step2Motivation";
 import Step3Question from "@/components/matchmaking/Step3Question";
-import Step5CrewReveal from "@/components/matchmaking/Step5CrewReveal";
+import Step4Commitment from "@/components/matchmaking/Step4Commitment";
 import Step7Envelope from "@/components/matchmaking/Step7Envelope";
 import { useEffect } from "react";
 
@@ -171,7 +171,7 @@ export default function RegisterPage() {
           />
         )}
         {state.currentStep === 4 && (
-          <Step5CrewReveal
+          <Step4Commitment
             displayName={state.displayName}
             onCommit={handleCommitmentConfirmed}
           />

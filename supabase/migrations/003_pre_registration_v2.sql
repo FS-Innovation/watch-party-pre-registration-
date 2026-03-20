@@ -32,5 +32,4 @@ CREATE POLICY "Allow public inserts on meet_greet_intent" ON meet_greet_intent
 CREATE POLICY "Allow public reads on meet_greet_intent" ON meet_greet_intent
   FOR SELECT TO anon USING (true);
 
-CREATE POLICY "Allow public updates on meet_greet_intent" ON meet_greet_intent
-  FOR UPDATE TO anon USING (true);
+-- Note: public UPDATE removed — API routes use service_role key for updates

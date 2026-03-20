@@ -8,33 +8,20 @@ interface Registration {
   display_name: string;
   email: string;
   city: string;
-  segment_choice: string;
   ai_segment: string;
   motivation_text: string;
   guest_question: string;
   ab_variant: string;
   ai_tags: Record<string, unknown> | null;
-  ai_reasoning_text: string;
-  crew_id: string | null;
-  crew_accepted: boolean;
-  switched_crew: boolean;
   ticket_number: string;
   commitment_confirmed: boolean;
   created_at: string;
 }
 
-interface HeatmapEntry {
-  topic_cluster: string;
-  question_count: number;
-  percentage: number;
-  sample_questions: string[];
-}
-
-type Tab = "registrations" | "crews" | "heatmap" | "ab-test";
+type Tab = "registrations" | "ab-test";
 
 export default function AdminPage() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [heatmap, setHeatmap] = useState<HeatmapEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [filter, setFilter] = useState("");
@@ -42,15 +29,10 @@ export default function AdminPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [regRes, heatmapRes] = await Promise.all([
-        fetch("/api/admin/registrations"),
-        fetch("/api/heatmap?event_id=screening-001"),
-      ]);
+      const regRes = await fetch("/api/admin/registrations");
       const regData = await regRes.json();
-      const heatmapData = await heatmapRes.json();
       setRegistrations(regData.registrations || []);
       setTotalCount(regData.total || 0);
-      setHeatmap(heatmapData.heatmap || []);
     } catch {
       console.error("Failed to fetch data");
     } finally {
@@ -70,20 +52,9 @@ export default function AdminPage() {
       name.includes(search) ||
       (r.email || "").toLowerCase().includes(search) ||
       (r.city || "").toLowerCase().includes(search) ||
-      (r.ai_segment || r.segment_choice || "").toLowerCase().includes(search)
+      (r.ai_segment || "").toLowerCase().includes(search)
     );
   });
-
-  // Crew stats
-  const crewGroups = registrations.reduce(
-    (acc, r) => {
-      const seg = r.ai_segment || r.segment_choice || "unknown";
-      if (!acc[seg]) acc[seg] = [];
-      acc[seg].push(r);
-      return acc;
-    },
-    {} as Record<string, Registration[]>
-  );
 
   // A/B test stats
   const variantA = registrations.filter((r) => r.ab_variant === "A");
@@ -99,19 +70,18 @@ export default function AdminPage() {
   const exportCSV = () => {
     const headers = [
       "Name", "Email", "City", "Segment", "Motivation", "Question",
-      "A/B Variant", "AI Tags", "Crew Accepted", "Switched", "Registered At",
+      "A/B Variant", "AI Tags", "Committed", "Registered At",
     ];
     const rows = registrations.map((r) => [
       r.display_name || r.first_name,
       r.email,
       r.city,
-      r.ai_segment || r.segment_choice,
+      r.ai_segment || "",
       `"${(r.motivation_text || "").replace(/"/g, '""')}"`,
       `"${(r.guest_question || "").replace(/"/g, '""')}"`,
       r.ab_variant || "",
       JSON.stringify(r.ai_tags || {}),
-      r.crew_accepted ? "Yes" : "No",
-      r.switched_crew ? "Yes" : "No",
+      r.commitment_confirmed ? "Yes" : "No",
       r.created_at,
     ]);
 
@@ -159,17 +129,16 @@ export default function AdminPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard label="Total" value={totalCount} />
-        <StatCard label="Crews" value={Object.keys(crewGroups).length} />
+        <StatCard label="Committed" value={registrations.filter((r) => r.commitment_confirmed).length} />
         <StatCard label="Questions" value={registrations.filter((r) => r.guest_question).length} />
-        <StatCard label="Switched" value={registrations.filter((r) => r.switched_crew).length} />
-        <StatCard label="Topics" value={heatmap.length} />
+        <StatCard label="With Motivation" value={registrations.filter((r) => r.motivation_text).length} />
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 mb-8 border-b border-white/10">
-        {(["registrations", "crews", "heatmap", "ab-test"] as Tab[]).map((tab) => (
+        {(["registrations", "ab-test"] as Tab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -203,7 +172,7 @@ export default function AdminPage() {
                   <th className="py-3 pr-4">Name</th>
                   <th className="py-3 pr-4">Email</th>
                   <th className="py-3 pr-4">City</th>
-                  <th className="py-3 pr-4">Crew</th>
+                  <th className="py-3 pr-4">Segment</th>
                   <th className="py-3 pr-4">Motivation</th>
                   <th className="py-3 pr-4">Question</th>
                   <th className="py-3 pr-4">A/B</th>
@@ -218,8 +187,7 @@ export default function AdminPage() {
                     <td className="py-3 pr-4 text-doac-gray">{r.city}</td>
                     <td className="py-3 pr-4">
                       <span className="text-xs border border-white/20 px-2 py-1">
-                        {r.ai_segment || r.segment_choice || "\u2014"}
-                        {r.switched_crew && " (switched)"}
+                        {r.ai_segment || "\u2014"}
                       </span>
                     </td>
                     <td className="py-3 pr-4 text-doac-gray max-w-[180px] truncate">
@@ -243,88 +211,6 @@ export default function AdminPage() {
             )}
           </div>
         </>
-      )}
-
-      {activeTab === "crews" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {Object.entries(crewGroups).map(([segment, members]) => {
-            const CREW_DISPLAY: Record<string, { name: string; emoji: string }> = {
-              "meaning-seeker": { name: "Reflection", emoji: "\u{1F30A}" },
-              builder: { name: "Builders", emoji: "\u{1F6E0}\u{FE0F}" },
-              creative: { name: "Creative Lab", emoji: "\u2728" },
-              connector: { name: "Connection", emoji: "\u{1F91D}" },
-            };
-            const info = CREW_DISPLAY[segment] || { name: segment, emoji: "\u{1F465}" };
-            return (
-              <div key={segment} className="border border-white/10 p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">{info.emoji}</span>
-                  <div>
-                    <h3 className="font-serif text-xl text-white">{info.name}</h3>
-                    <p className="text-doac-gray text-xs">{members.length} members</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {members.slice(0, 8).map((m) => (
-                    <div key={m.id} className="flex items-center justify-between text-sm">
-                      <span className="text-white">{m.display_name || m.first_name}</span>
-                      <span className="text-doac-gray text-xs">{m.city}</span>
-                    </div>
-                  ))}
-                  {members.length > 8 && (
-                    <p className="text-doac-gray/40 text-xs">+{members.length - 8} more</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-          {Object.keys(crewGroups).length === 0 && (
-            <p className="text-doac-gray text-center py-10 col-span-2">No crews formed yet.</p>
-          )}
-        </div>
-      )}
-
-      {activeTab === "heatmap" && (
-        <div>
-          <h2 className="font-serif text-xl text-white mb-6">
-            Curiosity Heatmap — What the room wants to know
-          </h2>
-          {heatmap.length > 0 ? (
-            <div className="space-y-4">
-              {heatmap.map((entry) => (
-                <div key={entry.topic_cluster} className="border border-white/10 p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-white font-medium capitalize">{entry.topic_cluster}</h3>
-                    <span className="text-doac-gray text-sm">
-                      {Math.round(entry.percentage)}% ({entry.question_count} questions)
-                    </span>
-                  </div>
-                  {/* Bar */}
-                  <div className="w-full h-2 bg-white/5 mb-4">
-                    <div
-                      className="h-full bg-doac-red transition-all duration-500"
-                      style={{ width: `${Math.min(entry.percentage, 100)}%` }}
-                    />
-                  </div>
-                  {/* Sample questions */}
-                  {entry.sample_questions && entry.sample_questions.length > 0 && (
-                    <div className="space-y-1">
-                      {entry.sample_questions.slice(0, 3).map((q, i) => (
-                        <p key={i} className="text-doac-gray/60 text-xs italic">
-                          &ldquo;{q}&rdquo;
-                        </p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-doac-gray text-center py-10">
-              No questions submitted yet. The heatmap populates as people register.
-            </p>
-          )}
-        </div>
       )}
 
       {activeTab === "ab-test" && (

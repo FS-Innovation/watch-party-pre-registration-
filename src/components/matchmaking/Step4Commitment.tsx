@@ -9,7 +9,7 @@ interface Props {
   onCommit: () => void;
 }
 
-export default function Step5CrewReveal({
+export default function Step4Commitment({
   displayName,
   onCommit,
 }: Props) {
