@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/supabase";
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,24 +9,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "registration_id is required" }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    // Validate registration exists
+    const { data: reg } = await db
+      .from("registrations")
+      .select("id")
+      .eq("id", registration_id)
+      .single();
+
+    if (!reg) {
+      return NextResponse.json({ error: "Registration not found" }, { status: 404 });
+    }
+
+    // Sanitize why_answer
+    const cleanWhy = why_answer ? String(why_answer).trim().slice(0, 200) : null;
+
+    const { data, error } = await db
       .from("meet_greet_intent")
       .insert({
         user_id: registration_id,
         wants_consideration: wants_consideration || false,
-        why_answer: why_answer || null,
+        why_answer: cleanWhy,
       })
       .select("id")
       .single();
 
     if (error) {
+      // Handle duplicate (unique constraint from migration 004)
+      if (error.code === "23505") {
+        return NextResponse.json({ error: "Already submitted", already_submitted: true }, { status: 409 });
+      }
       console.error("Meet greet insert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // AI theme clustering for the "why" answer (async, non-blocking)
-    if (wants_consideration && why_answer) {
-      clusterMeetGreetTheme(data.id, why_answer).catch(console.error);
+    // AI theme clustering for the "why" answer (async, non-blocking, with timeout)
+    if (wants_consideration && cleanWhy) {
+      clusterMeetGreetTheme(data.id, cleanWhy).catch(console.error);
     }
 
     return NextResponse.json({ id: data.id, success: true });
@@ -36,12 +54,18 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number = 5000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timeout));
+}
+
 async function clusterMeetGreetTheme(intentId: string, whyAnswer: string) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return;
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetchWithTimeout("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,7 +88,7 @@ Return ONLY the JSON object, no other text.`,
           },
         ],
       }),
-    });
+    }, 5000);
 
     const data = await response.json();
     const content = data.content?.[0]?.text;
@@ -72,7 +96,7 @@ Return ONLY the JSON object, no other text.`,
 
     const result = JSON.parse(content);
 
-    await supabase
+    await db
       .from("meet_greet_intent")
       .update({
         ai_theme: result.ai_theme || null,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/supabase";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get referral count for this code
-    const { count } = await supabase
+    const { count } = await db
       .from("referrals")
       .select("*", { count: "exact", head: true })
       .eq("referral_code", code)
