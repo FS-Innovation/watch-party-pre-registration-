@@ -408,11 +408,11 @@ function buildConfirmationHtml(params: {
 </html>`;
 }
 
-async function sendRegistrationConfirmationSMS(phone: string, name: string) {
-  const message =
-    `Hey ${name} — you're registered for the screening. ` +
-    `We'll text you a private link before it starts. ` +
-    `Keep this number saved.`;
-
-  await sendSMS(phone, message);
-}
+// SMS disabled — Twilio not yet confirmed
+// async function sendRegistrationConfirmationSMS(phone: string, name: string) {
+//   const message =
+//     `Hey ${name} — you're registered for the screening. ` +
+//     `We'll text you a private link before it starts. ` +
+//     `Keep this number saved.`;
+//   await sendSMS(phone, message);
+// }

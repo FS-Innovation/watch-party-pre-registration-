@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Epilogue:wght@700;800;900&family=Beth+Ellen&display=swap');
 
 html {
   scroll-behavior: smooth;
@@ -32,7 +32,64 @@ body {
 }
 
 .input-underline:focus {
-  border-bottom-color: #ffffff;
+  border-bottom-color: #d4a574;
+}
+
+/* Animated expanding underline for focused inputs */
+.input-glow {
+  position: relative;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0;
+  color: #ffffff;
+  font-size: 1.125rem;
+  padding: 0.75rem 0;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.5s ease;
+}
+
+.input-glow:focus {
+  border-bottom-color: rgba(212, 165, 116, 0.6);
+}
+
+.input-glow::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* Ambient background glow */
+.ambient-glow::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50vw;
+  height: 50vw;
+  border-radius: 50%;
+  background: rgba(26, 107, 122, 0.04);
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ambient-glow::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 40vw;
+  height: 40vw;
+  border-radius: 50%;
+  background: rgba(100, 66, 26, 0.04);
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Handwritten script text */
+.font-script {
+  font-family: 'Beth Ellen', cursive;
 }
 
 .input-underline::placeholder {
