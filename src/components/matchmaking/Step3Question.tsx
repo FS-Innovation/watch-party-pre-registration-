@@ -30,14 +30,6 @@ export default function Step3Question({ aiSegment, abVariant, onNext }: Props) {
     onNext(question.trim());
   };
 
-  const handleSkip = () => {
-    trackEvent("question_skipped", {
-      ab_variant: abVariant,
-      time_on_step: (Date.now() - enteredAt.current) / 1000,
-    });
-    onNext("");
-  };
-
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-16 ambient-glow">
       <div className="w-full max-w-lg relative z-10">
@@ -62,15 +54,15 @@ export default function Step3Question({ aiSegment, abVariant, onNext }: Props) {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="font-script text-doac-sand text-lg -rotate-2 mb-6"
         >
-          a question from Steven
+          your question might get answered live
         </motion.p>
 
-        {/* The question — editorial scale */}
+        {/* The question */}
         <motion.h2
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="font-headline font-black text-3xl md:text-4xl lg:text-5xl text-white mb-4 tracking-tighter leading-[0.95] uppercase"
+          className="font-headline font-black text-2xl md:text-3xl lg:text-4xl text-white mb-4 tracking-tighter leading-[0.95] uppercase"
         >
           IF YOU COULD ASK STEVEN ONE THING ABOUT WHAT GOES ON BEHIND THE DIARY — WHAT WOULD IT BE?
         </motion.h2>
@@ -108,14 +100,7 @@ export default function Step3Question({ aiSegment, abVariant, onNext }: Props) {
             <span className="text-[10px] tracking-widest text-white/20 uppercase">{question.length}/300</span>
           </div>
 
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleSkip}
-              className="text-white/20 text-xs hover:text-white/50 transition-colors"
-            >
-              Skip for now
-            </button>
-
+          <div className="flex items-center justify-end">
             <button
               onClick={handleSubmit}
               disabled={!question.trim() || submitting}

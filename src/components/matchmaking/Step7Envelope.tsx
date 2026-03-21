@@ -320,8 +320,8 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
                   }}
                 />
               </div>
-              <p className="text-doac-gray/40 text-xs text-center mt-3">
-                A message from Steven
+              <p className="font-script text-doac-sand/60 text-base text-center mt-4 -rotate-1">
+                watch til the end... 🤫
               </p>
             </motion.div>
           </div>
@@ -336,26 +336,29 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.6 }}
-                  className="mt-14 text-center"
+                  className="mt-16 max-w-lg mx-auto"
                 >
-                  <p className="text-doac-gray text-xs tracking-[0.3em] uppercase mb-6">
-                    One more thing
+                  <p className="font-script text-doac-sand text-lg -rotate-2 mb-6">
+                    one more thing
                   </p>
-                  <h2 className="font-headline font-bold text-2xl md:text-3xl text-white leading-tight tracking-tight mb-10 max-w-xl mx-auto">
-                    5 people will get to meet Steven after the screening. Want to be considered?
+                  <h2 className="font-headline font-extrabold text-3xl md:text-4xl text-white tracking-tighter leading-[0.95] uppercase mb-10">
+                    5 PEOPLE WILL GET TO MEET STEVEN AFTER THE SCREENING. WANT TO BE CONSIDERED?
                   </h2>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <div className="flex flex-col sm:flex-row gap-4">
                     <button
                       onClick={handleMeetGreetYes}
-                      className="bg-doac-red text-white px-10 py-4 text-lg tracking-wide hover:opacity-90 transition-opacity"
+                      className="flex-1 py-5 font-headline font-bold tracking-[0.2em] text-white border border-white/20 hover:border-doac-teal hover:text-doac-teal transition-all duration-500 active:scale-[0.98]"
+                      style={{
+                        background: "linear-gradient(to bottom right, rgba(26,107,122,0.08), transparent)",
+                      }}
                     >
-                      Yes
+                      YES
                     </button>
                     <button
                       onClick={handleMeetGreetNo}
-                      className="border border-white/40 text-white px-10 py-4 text-lg tracking-wide hover:border-white/70 transition-colors"
+                      className="flex-1 py-5 text-white/30 text-sm tracking-wide border border-white/[0.06] hover:text-white/60 hover:border-white/20 transition-all duration-300"
                     >
-                      No
+                      No thanks
                     </button>
                   </div>
                 </motion.div>
@@ -368,34 +371,40 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.6 }}
-                  className="mt-14 text-center max-w-lg mx-auto"
+                  className="mt-16 max-w-lg mx-auto"
                 >
-                  <h2 className="font-headline font-bold text-2xl md:text-3xl text-white leading-tight tracking-tight mb-8">
-                    In one sentence, why should it be you?
+                  <h2 className="font-headline font-extrabold text-3xl md:text-4xl text-white tracking-tighter leading-[0.95] uppercase mb-8">
+                    IN ONE SENTENCE, WHY SHOULD IT BE YOU?
                   </h2>
-                  <textarea
-                    value={whyText}
-                    onChange={(e) => {
-                      if (e.target.value.length <= 200) {
-                        setWhyText(e.target.value);
-                        setWhyError("");
-                      }
-                    }}
-                    placeholder="Tell us..."
-                    className="w-full bg-transparent border border-white/20 text-white text-lg p-4 rounded-sm focus:outline-none focus:border-white/50 transition-colors resize-none select-text"
-                    rows={3}
-                    autoFocus
-                  />
-                  <div className="flex justify-between items-center mt-2 mb-6">
-                    <p className="text-doac-gray/40 text-xs">{whyText.length}/200</p>
+                  <div className="relative group">
+                    <textarea
+                      value={whyText}
+                      onChange={(e) => {
+                        if (e.target.value.length <= 200) {
+                          setWhyText(e.target.value);
+                          setWhyError("");
+                        }
+                      }}
+                      placeholder="Tell us..."
+                      className="w-full bg-[#0e0e0e] border-none text-white text-lg p-6 min-h-[120px] resize-none focus:outline-none placeholder:text-white/15 transition-all select-text"
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white/10 group-focus-within:bg-doac-sand/50 transition-all duration-500" />
+                  </div>
+                  <div className="flex justify-between items-center mt-3 mb-8">
+                    <span className="text-[10px] tracking-widest text-white/20 uppercase">{whyText.length}/200</span>
                     {whyError && <p className="text-doac-red text-sm">{whyError}</p>}
                   </div>
-                  <button
-                    onClick={handleMeetGreetSubmit}
-                    className="bg-doac-red text-white px-10 py-4 text-lg tracking-wide hover:opacity-90 transition-opacity"
-                  >
-                    Submit
-                  </button>
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleMeetGreetSubmit}
+                      className="group flex items-center gap-3 font-headline font-bold text-xl tracking-tighter text-white hover:text-doac-sand transition-colors"
+                    >
+                      SUBMIT
+                      <span className="text-2xl group-hover:translate-x-1 transition-transform">&rarr;</span>
+                    </button>
+                  </div>
                 </motion.div>
               )}
 
@@ -405,12 +414,12 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.8 }}
-                  className="mt-14 text-center"
+                  className="mt-16 max-w-lg mx-auto"
                 >
-                  <h2 className="font-serif text-2xl md:text-3xl text-white leading-relaxed mb-4">
+                  <h2 className="font-headline font-extrabold text-2xl md:text-3xl text-white tracking-tighter leading-tight uppercase mb-4">
                     We&apos;ll let you know on the night.
                   </h2>
-                  <p className="text-doac-gray text-base leading-relaxed">
+                  <p className="text-white/30 text-sm leading-relaxed border-l border-doac-teal/20 pl-4">
                     Make sure you complete all polls during the screening to stay eligible.
                   </p>
                 </motion.div>
@@ -422,9 +431,9 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.8 }}
-                  className="mt-14 text-center"
+                  className="mt-16 max-w-lg mx-auto"
                 >
-                  <h2 className="font-serif text-xl md:text-2xl text-white/80 leading-relaxed">
+                  <h2 className="font-headline font-bold text-xl md:text-2xl text-white/60 tracking-tight leading-tight">
                     No worries — we&apos;ll see you at the screening.
                   </h2>
                 </motion.div>
