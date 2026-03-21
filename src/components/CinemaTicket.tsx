@@ -16,51 +16,59 @@ export default function CinemaTicket({
   formattedDate,
 }: Props) {
   return (
-    <div className="bg-black border border-white/30 aspect-video relative flex flex-col justify-between p-6 md:p-8">
-      {/* Perforation line */}
-      <div className="absolute right-0 top-0 bottom-0 w-8 border-l border-dashed border-white/20 flex items-center justify-center">
-        <span className="text-white/20 text-xs -rotate-90 whitespace-nowrap tracking-widest">
-          ADMIT ONE
-        </span>
+    <div className="bg-[#1c1b1b] border border-white/[0.08] relative flex flex-col overflow-hidden shadow-[0_48px_100px_rgba(0,0,0,0.8)]">
+      {/* Header */}
+      <div className="px-8 pt-8 pb-5 flex justify-between items-start border-b border-white/[0.06]">
+        <div>
+          <span className="text-[0.65rem] tracking-[0.3em] font-bold text-white/50 uppercase">
+            BTD PRIVATE SCREENING
+          </span>
+        </div>
+        <div className="text-white/20 text-2xl">
+          &#9633;&#9633;
+        </div>
       </div>
 
-      <div className="pr-10">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
+      {/* Name — large, editorial */}
+      <div className="px-8 py-8 flex-grow">
+        <h1 className="font-headline font-black text-4xl md:text-5xl uppercase tracking-tighter leading-none text-white mb-3">
+          {firstName}
+        </h1>
+        <div className="font-mono text-xs tracking-widest text-doac-sand/70 mt-2">
+          TICKET #{ticketNumber}
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="px-8 py-6 bg-white/[0.02] border-t border-white/[0.06]">
+        <div className="grid grid-cols-2 gap-y-4 gap-x-2">
           <div>
-            <h3 className="font-serif text-xl md:text-2xl tracking-[0.15em] text-white font-bold">
-              Behind The Diary
-            </h3>
-            <p className="text-doac-gray text-xs tracking-widest mt-1">
-              PRIVATE SCREENING
-            </p>
+            <span className="text-[0.6rem] uppercase tracking-widest text-white/30 font-bold">SCREENING</span>
+            <p className="text-sm font-medium text-white mt-1">{eventTitle}</p>
           </div>
-          <div className="text-right">
-            <p className="text-doac-gray text-xs">NO.</p>
-            <p className="font-serif text-xl md:text-2xl text-white">#{ticketNumber}</p>
+          <div>
+            <span className="text-[0.6rem] uppercase tracking-widest text-white/30 font-bold">DATE & TIME</span>
+            <p className="text-sm font-medium text-white mt-1">{formattedDate}</p>
+          </div>
+          <div className="col-span-2 mt-1">
+            <span className="text-[0.6rem] uppercase tracking-widest text-white/30 font-bold">LOCATION</span>
+            <p className="text-sm font-medium text-white mt-1">Virtual &middot; Via Zoom</p>
           </div>
         </div>
+      </div>
 
-        {/* Divider */}
-        <div className="border-t border-white/10 mb-4" />
-
-        {/* Details — compact two-column grid */}
-        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-          <div>
-            <p className="text-doac-gray text-xs tracking-widest mb-0.5">NAME</p>
-            <p className="font-serif text-lg text-white">{firstName}</p>
-          </div>
-
-          <div>
-            <p className="text-doac-gray text-xs tracking-widest mb-0.5">SCREENING</p>
-            <p className="font-serif text-lg text-white">{eventTitle}</p>
-          </div>
-
-          <div>
-            <p className="text-doac-gray text-xs tracking-widest mb-0.5">DATE &amp; TIME</p>
-            <p className="text-white text-sm">{formattedDate}</p>
-          </div>
+      {/* Bottom decorative strip */}
+      <div className="h-10 px-8 flex items-center justify-between border-t border-white/[0.03]">
+        <div className="flex gap-1">
+          <div className="w-1.5 h-1.5 bg-white/10" />
+          <div className="w-1.5 h-1.5 bg-doac-teal/30" />
+          <div className="w-1.5 h-1.5 bg-white/10" />
+          <div className="w-1.5 h-1.5 bg-white/10" />
+          <div className="w-1.5 h-1.5 bg-doac-sand/30" />
         </div>
+        <span className="font-mono text-[0.5rem] text-white/15 tracking-[0.3em] uppercase">
+          Verified
+        </span>
       </div>
     </div>
   );

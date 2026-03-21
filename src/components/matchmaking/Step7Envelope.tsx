@@ -172,8 +172,8 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
               }}
             />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <div className="w-16 h-16 rounded-full bg-doac-red/20 border-2 border-doac-red/50 flex items-center justify-center shadow-[0_0_20px_rgba(233,69,96,0.15)]">
-                <span className="font-serif text-doac-red text-[10px] font-bold tracking-[0.2em]">
+              <div className="w-16 h-16 rounded-full bg-doac-teal/15 border-2 border-doac-teal/40 flex items-center justify-center shadow-[0_0_20px_rgba(26,107,122,0.2)]">
+                <span className="font-headline text-doac-teal text-[10px] font-bold tracking-[0.2em]">
                   BTD
                 </span>
               </div>
@@ -260,6 +260,16 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
       {/* ===== EVERYTHING REVEALED ===== */}
       {phase === "revealed" && (
         <div className="w-full max-w-5xl">
+          {/* "you're in" moment */}
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="font-script text-doac-sand text-3xl md:text-4xl -rotate-3 mb-8 text-center"
+          >
+            you&apos;re in
+          </motion.p>
+
           {/* Ticket + Video */}
           <div className="flex flex-col md:flex-row md:items-start md:justify-center gap-8 md:gap-10">
             <motion.div
@@ -331,7 +341,7 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
                   <p className="text-doac-gray text-xs tracking-[0.3em] uppercase mb-6">
                     One more thing
                   </p>
-                  <h2 className="font-serif text-2xl md:text-3xl text-white leading-relaxed mb-10 max-w-xl mx-auto">
+                  <h2 className="font-headline font-bold text-2xl md:text-3xl text-white leading-tight tracking-tight mb-10 max-w-xl mx-auto">
                     5 people will get to meet Steven after the screening. Want to be considered?
                   </h2>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -360,7 +370,7 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
                   transition={{ duration: 0.6 }}
                   className="mt-14 text-center max-w-lg mx-auto"
                 >
-                  <h2 className="font-serif text-2xl md:text-3xl text-white leading-relaxed mb-8">
+                  <h2 className="font-headline font-bold text-2xl md:text-3xl text-white leading-tight tracking-tight mb-8">
                     In one sentence, why should it be you?
                   </h2>
                   <textarea
@@ -446,6 +456,9 @@ export default function Step7Envelope({ event, state, onMeetGreetComplete }: Pro
                   <button onClick={() => handleShare("twitter")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">Twitter/X</button>
                   <button onClick={() => handleShare("whatsapp")} className="text-doac-gray/50 text-xs hover:text-white transition-colors">WhatsApp</button>
                 </div>
+                <p className="font-script text-white/20 text-base text-center mt-6 rotate-1">
+                  screenshot this. it&apos;s proof you were early.
+                </p>
               </div>
             </motion.div>
           )}

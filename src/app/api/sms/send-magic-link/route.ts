@@ -16,6 +16,12 @@ import { sendSMS } from "@/lib/twilio";
  * Requires ADMIN_SECRET bearer token for bulk sends.
  */
 export async function POST(request: NextRequest) {
+  // DISABLED: Twilio not yet confirmed. Return early.
+  return NextResponse.json(
+    { error: "SMS/magic links are disabled — Twilio not yet configured" },
+    { status: 503 }
+  );
+
   try {
     const body = await request.json();
 

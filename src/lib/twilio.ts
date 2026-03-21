@@ -1,3 +1,6 @@
+// DISABLED: Twilio/SMS is disabled until account is confirmed.
+// All SMS functions return null / no-op. Re-enable when Twilio creds are ready.
+
 import Twilio from "twilio";
 
 let _client: ReturnType<typeof Twilio> | null = null;

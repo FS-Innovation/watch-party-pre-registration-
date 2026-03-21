@@ -28,37 +28,43 @@ export default function Step2Motivation({ displayName, onNext }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-16">
-      <div className="w-full max-w-lg text-center">
-        {/* Progress */}
+    <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-16 ambient-glow">
+      <div className="w-full max-w-lg relative z-10">
+        {/* Reel progress indicator */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="flex items-center justify-center gap-3 mb-10"
+          className="flex items-end gap-2 mb-14"
         >
-          <span className="text-doac-gray text-xs tracking-[0.2em]">QUICK INTRO</span>
-          <span className="text-doac-gray/40 text-xs">&middot;</span>
-          <span className="text-white text-xs">1 of 2</span>
+          <div className="w-[1px] h-4 bg-doac-sand" />
+          <div className="w-[1px] h-2 bg-white/10" />
+          <div className="w-[1px] h-2 bg-white/10" />
+          <div className="w-[1px] h-2 bg-white/10" />
+          <span className="text-[10px] tracking-[0.2em] text-white/30 uppercase ml-3">1 of 2</span>
         </motion.div>
 
-        {/* Question */}
+        {/* Heading */}
         <motion.h2
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className="font-serif text-2xl md:text-3xl text-white mb-4"
+          className="font-headline font-extrabold text-4xl md:text-5xl text-white mb-3 tracking-tighter leading-none uppercase"
         >
-          What brings you here tonight{displayName ? `, ${displayName}` : ""}?
+          WHAT BRINGS
+          <br />
+          YOU HERE{displayName ? "," : ""}
+          {displayName && <br />}
+          {displayName ? displayName.toUpperCase() : ""}?
         </motion.h2>
 
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="text-doac-gray text-sm mb-10"
+          className="font-script text-doac-sand text-base -rotate-1 ml-1 mb-10"
         >
-          This helps us shape the conversation on the night.
+          this helps us shape the night
         </motion.p>
 
         {/* Text input */}
@@ -67,33 +73,39 @@ export default function Step2Motivation({ displayName, onNext }: Props) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
         >
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="I'm here because..."
-            className="w-full bg-transparent border border-white/20 text-white text-base p-5 min-h-[120px] resize-none focus:border-white/50 focus:outline-none transition-colors placeholder:text-white/20"
-            maxLength={500}
-            autoFocus
-          />
+          <div className="relative group">
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="I'm here because..."
+              className="w-full bg-[#0e0e0e] border-none text-white text-lg p-6 min-h-[160px] resize-none focus:outline-none placeholder:text-white/15 transition-all"
+              maxLength={500}
+              autoFocus
+            />
+            <div className="absolute bottom-0 left-0 w-full h-[1px] bg-white/10 group-focus-within:bg-doac-sand/50 transition-all duration-500" />
+          </div>
 
-          <div className="flex justify-between items-center mt-2 mb-8">
-            <span className="text-doac-gray/30 text-xs">
+          <div className="flex justify-between items-center mt-3 mb-10">
+            <span className="text-[10px] tracking-widest text-white/20 uppercase">
               {text.length}/500
             </span>
             {text.trim().split(/\s+/).filter(Boolean).length > 0 && (
-              <span className="text-doac-gray/30 text-xs">
+              <span className="text-[10px] tracking-widest text-white/20 uppercase">
                 {text.trim().split(/\s+/).filter(Boolean).length} words
               </span>
             )}
           </div>
 
-          <button
-            onClick={handleSubmit}
-            disabled={!text.trim() || submitting}
-            className="bg-white text-black px-12 py-4 text-lg tracking-wide hover:bg-doac-gray transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
-          >
-            {submitting ? "Processing..." : "Next"}
-          </button>
+          <div className="flex justify-end">
+            <button
+              onClick={handleSubmit}
+              disabled={!text.trim() || submitting}
+              className="group flex items-center gap-3 font-headline font-bold text-xl tracking-tighter text-white hover:text-doac-sand transition-colors disabled:opacity-15 disabled:cursor-not-allowed"
+            >
+              {submitting ? "..." : "NEXT"}
+              <span className="text-2xl group-hover:translate-x-1 transition-transform">&rarr;</span>
+            </button>
+          </div>
         </motion.div>
       </div>
     </div>

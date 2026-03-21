@@ -12,10 +12,16 @@ const config: Config = {
         "doac-red": "#E94560",
         "doac-gray": "#AAAAAA",
         "doac-black": "#000000",
+        "doac-teal": "#1a6b7a",
+        "doac-sand": "#d4a574",
+        "doac-surface": "#131313",
+        "doac-surface-light": "#1c1b1b",
       },
       fontFamily: {
+        headline: ["Epilogue", "sans-serif"],
         serif: ["Georgia", "Times New Roman", "serif"],
         sans: ["Inter", "Helvetica Neue", "Arial", "sans-serif"],
+        script: ["'Beth Ellen'", "cursive"],
       },
       keyframes: {
         "fade-in": {
