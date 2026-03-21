@@ -52,7 +52,7 @@ export default function Step1FindYourPeople({ onNext }: Props) {
     });
   };
 
-  const isValid = displayName.trim() && email.trim() && phone.trim();
+  const isValid = displayName.trim() && email.trim() && phone.trim() && city.trim();
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center px-4 py-16 ambient-glow">
@@ -155,7 +155,7 @@ export default function Step1FindYourPeople({ onNext }: Props) {
           </div>
 
           <div className="group">
-            <label className="block text-[10px] tracking-[0.15em] text-white/40 uppercase mb-2 font-semibold">City <span className="text-white/20">(optional)</span></label>
+            <label className="block text-[10px] tracking-[0.15em] text-white/40 uppercase mb-2 font-semibold">City</label>
             <input
               type="text"
               value={city}
